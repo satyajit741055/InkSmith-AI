@@ -6,7 +6,7 @@ from app.agent.nodes.reducer import reducer
 from langgraph.types import Send
 
 def fanout(state:State):
-    return [Send("worker", {"task": task, "topic":state["title"] , "plan":state["plan"]}) for task in state["plan"].tasks]
+    return [Send("worker", {"task": task, "topic": state["title"], "plan": state["plan"]}) for task in state["plan"].tasks]
 
 blogGraph = StateGraph(State)
 
