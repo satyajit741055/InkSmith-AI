@@ -1,5 +1,5 @@
 def main():
-    print("Hello from inksmith-ai!")
+    print("Hello from backend!")
 
 
 if __name__ == "__main__":
