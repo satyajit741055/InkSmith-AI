@@ -3,7 +3,9 @@ from app.agent.state import State
 
 def reducer(state:State) -> dict:
     title = state["title"]
-    body = "\n\n".join(state["sections"])
+    ordered_sections = [md for _, md in sorted(state["sections"], key=lambda x: x[0])]
+
+    body = "\n\n".join(ordered_sections).strip()
 
     finalMd = f"# {title}\n\n{body}\n\n"
 
