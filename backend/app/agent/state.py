@@ -1,6 +1,22 @@
-from typing import TypedDict,Annotated,Literal
+from typing import TypedDict,Annotated,Literal,Optional
 from pydantic import BaseModel,Field
 import operator
+
+
+class EvidenceItem(BaseModel):
+    title: str
+    url: str
+    published_at: str = ""  # keep if Tavily provides; DO NOT rely on it
+    snippet: str = ""
+    source: str = ""
+
+class EvidencePack(BaseModel):
+    evidence: list[EvidenceItem] = Field(default_factory=list)
+
+class RouterDecision(BaseModel):
+    needs_research : str
+    mode : Literal["closed_book","hybrid","open_book"]
+    queries : list[str] = Field(default_factory=list)
 
 class Task(BaseModel):
     id: int
@@ -13,31 +29,37 @@ class Task(BaseModel):
     bullets: list[str] = Field(
         ...,
         min_length=3,
-        max_length=5,
-        description="3–5 concrete, non-overlapping subpoints to cover in this section.",
+        max_length=6,
+        description="3–6 concrete, non-overlapping subpoints to cover in this section.",
     )
-    target_words: int = Field(
-        ...,
-        description="Target word count for this section (120–450).",
-    )
-    section_type: Literal[
-        "intro", "core", "examples", "checklist", "common_mistakes", "conclusion"
-    ] = Field(
-        ...,
-        description="Use 'common_mistakes' exactly once in the plan.",
-    )
+    target_words: int = Field(..., description="Target word count for this section (120–550).")
+
+    tags: list[str] = Field(default_factory=list)
+    requires_research: bool = False
+    requires_citations: bool = False
+    requires_code: bool = False
     
 class Plan(BaseModel):
-    blog_title : str
-    audience: str = Field(..., description="Who this blog is for.")
-    tone: str = Field(..., description="Writing tone (e.g., practical, crisp).")
-    tasks : list[Task]
+    blog_title: str
+    audience: str
+    tone: str
+    blog_kind: Literal["explainer", "tutorial", "news_roundup", "comparison", "system_design"] = "explainer"
+    constraints: list[str] = Field(default_factory=list)
+    tasks: list[Task]
+
 
 class State(TypedDict):
     title : str
     final : str
     plan  : Plan
-    sections : Annotated[list[str],operator.add]
+    sections: Annotated[list[tuple[int, str]], operator.add]
+
+    # router / reseach 
+    mode : str
+    needs_research : bool
+    queries : list[str]
+    evidence: list[EvidenceItem]
+
 
 
 

@@ -1,17 +1,27 @@
 from app.agent.llm import llm
 from langchain_core.messages import SystemMessage, HumanMessage
 from app.agent.prompts import worker_prompt
+from app.agent.state import EvidenceItem, Task, Plan
+
 
 def worker(payload:dict)->dict:
-    task = payload["task"]
+    task = Task(**payload["task"])
+    plan = Plan(**payload["plan"])
+    evidence = [EvidenceItem(**e) for e in payload.get("evidence", [])]
     topic = payload["topic"]
-    plan = payload["plan"]
+    mode = payload.get("mode", "closed_book")
 
-    bullets_text = "\n- " + "\n- ".join(task.bullets)
-    
+    bullets_text = "\n- " + "\n- ".join(task.bullets)    
+    evidence_text = ""
+    if evidence:
+        evidence_text = "\n".join(
+            f"- {e.title} | {e.url} | {e.published_at or 'date:unknown'}".strip()
+            for e in evidence[:20]
+        )
+
 
     blog_title = plan.blog_title
-    prompt = worker_prompt(plan, task, topic,bullets_text)
+    prompt = worker_prompt(plan, task, topic, bullets_text, evidence_text, mode)
 
 
     section_content = llm.invoke(
@@ -21,5 +31,5 @@ def worker(payload:dict)->dict:
         ]
     ).content
    
-    return {"sections": [section_content]}
+    return {"sections": [(task.id, section_content)]}
     
