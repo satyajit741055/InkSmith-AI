@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.agent.graph import build_graph
 from app.config import settings
@@ -23,9 +23,13 @@ app = FastAPI(title="InkSmith AI Blog Generator", lifespan=lifespan)
 
 
 class QueryRequest(BaseModel):
-    title: str
+    title: str = Field(..., min_length=3, max_length=200)
     thread_id: Optional[str] = "default"
 
+class BlogResponse(BaseModel):
+    file_name: str
+    md_url: str | None
+    pdf_url: str | None
 
 # Serve generated files directly
 app.mount("/output", StaticFiles(directory=settings.OUTPUT_DIR), name="output")
@@ -62,11 +66,11 @@ def query(request: QueryRequest):
     md_url = f"/output/{file_name}" if file_name else None
     pdf_url = md_url.replace(".md", ".pdf") if md_url else None
 
-    return {
-        **result,
-        "md_url": md_url,
-        "pdf_url": pdf_url,
-    }
+    return BlogResponse(
+        file_name=file_name,
+        md_url=md_url,
+        pdf_url=pdf_url,
+    )
 
 @app.get("/files/{file_path:path}")
 def get_file(file_path: str):

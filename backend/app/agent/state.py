@@ -1,4 +1,4 @@
-from typing import TypedDict,Annotated,Literal,Optional
+from typing import TypedDict,Annotated,Literal
 from pydantic import BaseModel,Field
 import operator
 
@@ -48,8 +48,6 @@ class Plan(BaseModel):
     tasks: list[Task]
 
 
-
-
 class ImageSpec(BaseModel):
     placeholder: str = Field(..., description="e.g. [[IMAGE_1]]")
     filename: str = Field(..., description="Save under images/, e.g. qkv_flow.png")
@@ -74,7 +72,7 @@ class State(TypedDict):
     mode : str
     needs_research : bool
     queries : list[str]
-    evidence: list[EvidenceItem]
+    evidence: list[EvidencePack]
 
     merged_md: str
     md_with_placeholders: str
