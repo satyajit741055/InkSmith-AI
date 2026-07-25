@@ -4,11 +4,11 @@ from pathlib import Path
 from app.config import settings
 import re
 import os
+from datetime import datetime
+
 
 def generate_and_place_images(state: State) -> dict:
     plan = state["plan"]
-    assert plan is not None
-
     md = state.get("md_with_placeholders") or state["merged_md"]
     image_specs = state.get("image_specs", []) or []
 
@@ -16,10 +16,11 @@ def generate_and_place_images(state: State) -> dict:
     # Sanitize filename: remove invalid Windows characters
     safe_title = re.sub(r'[<>:"/\\|?*]', '', plan.blog_title)
     fileName = safe_title.lower().replace(" ","_")+".md"
-
+    folder = Path(settings.OUTPUT_DIR) 
+    output_path = folder / fileName
     if not image_specs:
-        Path(fileName).write_text(md, encoding="utf-8")
-        return {"final": md}
+        Path(output_path).write_text(md, encoding="utf-8")
+        return {"final": md, "fileName": fileName, "mdFilePath": str(output_path)}
     
     images_dir = Path(settings.IMAGES_DIR)
     images_dir.mkdir(exist_ok=True)
@@ -52,11 +53,10 @@ def generate_and_place_images(state: State) -> dict:
         md = md.replace(placeholder, img_md)
 
     
-    folder = Path(settings.OUTPUT_DIR) 
-    output_path = folder / fileName
-    folder.mkdir(exist_ok=True)
+    
+    
+    Path(settings.OUTPUT_DIR).mkdir(exist_ok=True)
     if output_path.exists():
-        from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         new_name = f"{output_path.stem}_{timestamp}{output_path.suffix}"
         output_path = output_path.with_name(new_name)

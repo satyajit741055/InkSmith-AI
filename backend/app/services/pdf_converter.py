@@ -10,6 +10,3 @@ def convert_to_pdf(path:str):
     pdf.save(path.replace(".md", ".pdf"))
 
     return path.replace(".md", ".pdf")
-
-
-convert_to_pdf(r"F:\GenAiProjects\InkSmith-AI\backend\output\understanding_the_hare_krishna_movement_principles_and_practices.md")

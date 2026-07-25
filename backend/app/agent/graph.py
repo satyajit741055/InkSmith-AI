@@ -1,4 +1,4 @@
-from app.agent.reducer_subraph.subgraph import reducer_subgraph
+from app.agent.reducer_subgraph.subgraph import reducer_subgraph
 from app.agent.nodes.md_to_pdf import md_to_pdf
 from langgraph.graph import StateGraph,START,END
 from app.agent.state import State
