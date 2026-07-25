@@ -1,25 +1,88 @@
-from app.agent.graph import blogGraph
-from app.agent.reducer_subraph.subgraph import reducer_subgraph
+from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Optional
+
+from fastapi import FastAPI, HTTPException, Response
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+
+from app.agent.graph import build_graph
+from app.config import settings
 
 
-# Run graph and save state before reducer
-# result = blogGraph.invoke({"title": "GPT Models"})
-# print("Graph execution completed")
-
-# To Generate Flow chart of MainGraph
-# blogGraph.get_graph().draw_mermaid_png(output_file_path="graph.png")
-
-# To Generate flow chart of SubGraph 
-reducer_subgraph.get_graph().draw_mermaid_png(output_file_path="subgraph.png")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.rag_agent = build_graph()
+    Path(settings.OUTPUT_DIR).mkdir(exist_ok=True)
+    Path(settings.IMAGES_DIR).mkdir(exist_ok=True)
+    yield
 
 
-# # Save state for testing
-# state_to_save = {
-#     "plan": result["plan"].model_dump() if result.get("plan") else None,
-#     "merged_md": result.get("merged_md", ""),
-#     "md_with_placeholders": result.get("md_with_placeholders", ""),
-#     "image_specs": result.get("image_specs", [])
-# }
+app = FastAPI(title="InkSmith AI Blog Generator", lifespan=lifespan)
 
-# Path("test_state.json").write_text(json.dumps(state_to_save, indent=2), encoding="utf-8")
-# print("State saved to test_state.json")
+
+class QueryRequest(BaseModel):
+    title: str
+    thread_id: Optional[str] = "default"
+
+
+# Serve generated files directly
+app.mount("/output", StaticFiles(directory=settings.OUTPUT_DIR), name="output")
+app.mount("/images", StaticFiles(directory=settings.IMAGES_DIR), name="images")
+
+
+@app.get("/")
+def read_root():
+    return {"message": "InkSmith AI Blog Generator"}
+
+
+@app.get("/build_graph")
+def get_graph_image():
+    """
+    Returns the Mermaid image of the agent's workflow.
+    """
+    try:
+        png_bytes = app.state.rag_agent.get_graph().draw_mermaid_png()
+        return Response(content=png_bytes, media_type="image/png")
+    except Exception as e:
+        return {"error": f"Could not generate graph image: {e}"}
+
+
+@app.post("/query")
+def query(request: QueryRequest):
+    """
+    Generate a blog post from the given title.
+    """
+    initial_state = {"title": request.title}
+    config = {"configurable": {"thread_id": request.thread_id}}
+    result = app.state.rag_agent.invoke(initial_state, config)
+
+    file_name = result.get("fileName", "")
+    md_url = f"/output/{file_name}" if file_name else None
+    pdf_url = md_url.replace(".md", ".pdf") if md_url else None
+
+    return {
+        **result,
+        "md_url": md_url,
+        "pdf_url": pdf_url,
+    }
+
+@app.get("/files/{file_path:path}")
+def get_file(file_path: str):
+    """
+    Serve a generated file by path. Only serves files inside OUTPUT_DIR.
+    """
+    base_dir = Path(settings.OUTPUT_DIR).resolve()
+    target = (base_dir / file_path).resolve()
+
+    # Prevent path traversal outside OUTPUT_DIR
+    if not str(target).startswith(str(base_dir)) or not target.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    return FileResponse(target, filename=target.name,content_disposition_type="inline")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

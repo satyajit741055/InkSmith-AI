@@ -1,7 +1,9 @@
 from app.agent.state import State
 from app.services.image_bytes_generator import _hf_generate_image_bytes
 from pathlib import Path
-
+from app.config import settings
+import re
+import os
 
 def generate_and_place_images(state: State) -> dict:
     plan = state["plan"]
@@ -10,14 +12,16 @@ def generate_and_place_images(state: State) -> dict:
     md = state.get("md_with_placeholders") or state["merged_md"]
     image_specs = state.get("image_specs", []) or []
 
-    print(image_specs)
+    
+    # Sanitize filename: remove invalid Windows characters
+    safe_title = re.sub(r'[<>:"/\\|?*]', '', plan.blog_title)
+    fileName = safe_title.lower().replace(" ","_")+".md"
 
     if not image_specs:
-        filename = f"{plan.blog_title}.md"
-        Path(filename).write_text(md, encoding="utf-8")
+        Path(fileName).write_text(md, encoding="utf-8")
         return {"final": md}
     
-    images_dir = Path("images")
+    images_dir = Path(settings.IMAGES_DIR)
     images_dir.mkdir(exist_ok=True)
 
 
@@ -43,18 +47,12 @@ def generate_and_place_images(state: State) -> dict:
                 continue
         
 
-        img_md = f"![{spec['alt']}](../images/{filename})\n*{spec['caption']}*"
+        rel_img_dir = os.path.relpath(settings.IMAGES_DIR, settings.OUTPUT_DIR).replace(os.sep, "/")
+        img_md = f"![{spec['alt']}]({rel_img_dir}/{filename})\n*{spec['caption']}*"
         md = md.replace(placeholder, img_md)
-        test_file  = "test.md"
-        Path(test_file).write_text(md, encoding="utf-8")
-
 
     
-    import re
-    # Sanitize filename: remove invalid Windows characters
-    safe_title = re.sub(r'[<>:"/\\|?*]', '', plan.blog_title)
-    fileName = safe_title.lower().replace(" ","_")+".md"
-    folder = Path("output") 
+    folder = Path(settings.OUTPUT_DIR) 
     output_path = folder / fileName
     folder.mkdir(exist_ok=True)
     if output_path.exists():
@@ -65,9 +63,7 @@ def generate_and_place_images(state: State) -> dict:
     
     output_path.write_text(md,encoding="utf-8")
 
-    print("fileName : ",fileName)
-
-    return {"final": md}
+    return {"final": md, "fileName": fileName, "mdFilePath": str(output_path)}
         
        
 
