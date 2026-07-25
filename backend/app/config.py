@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     # Tavily API Configuration
     TAVILY_API_KEY: str 
 
+    GOOGLE_API_KEY: str
+
+    HF_API_TOKEN: str
+
 
 settings = Settings()
 

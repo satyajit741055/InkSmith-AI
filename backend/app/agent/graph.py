@@ -1,3 +1,4 @@
+from app.agent.reducer_subraph.subgraph import reducer_subgraph
 from langgraph.graph import StateGraph,START,END
 from app.agent.state import State
 from app.agent.nodes.orchestrator import orchestrator
@@ -16,7 +17,7 @@ def fanout(state: State):
                 "topic": state["title"],
                 "mode": state["mode"],
                 "plan": state["plan"].model_dump(),
-                "evidence": [e.model_dump() for e in state.get("evidence", [])],
+                "evidence": state.get("evidence", []),  # Already serialized as dicts
             },
         )
         for task in state["plan"].tasks
@@ -29,9 +30,10 @@ blogGraph = StateGraph(State)
 
 blogGraph.add_node("orchestrator",orchestrator)
 blogGraph.add_node("worker",worker)
-blogGraph.add_node("reducer",reducer)
+
 blogGraph.add_node("router",router)
 blogGraph.add_node("research",researcher)
+blogGraph.add_node("reducer",reducer_subgraph)
 
 
 blogGraph.add_edge(START,"router")

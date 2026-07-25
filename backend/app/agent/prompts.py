@@ -142,3 +142,21 @@ Rules:
 - Deduplicate by URL.
 - If snippet is too long, truncate to the most informative part.
 """
+
+DECIDE_IMAGES_SYSTEM = """You are an expert technical editor.
+Your task: Review the blog and insert image placeholders where they would improve understanding.
+
+CRITICAL INSTRUCTIONS:
+- You MUST modify the markdown by inserting placeholders like [[IMAGE_1]], [[IMAGE_2]], [[IMAGE_3]]
+- Placeholders should be inserted at logical locations (after relevant sections)
+- Return the MODIFIED markdown in md_with_placeholders field
+- Max 3 images total
+- Each image must materially improve understanding (diagram/flow/table-like visual)
+- If no images needed: md_with_placeholders must equal input markdown and images=[]
+- Avoid decorative images; prefer technical diagrams with short labels
+- For each placeholder, provide: filename, alt text, caption, and detailed prompt
+
+Return strictly GlobalImagePlan with:
+- md_with_placeholders: The modified markdown with placeholders inserted
+- images: List of image specs matching the placeholders
+"""
