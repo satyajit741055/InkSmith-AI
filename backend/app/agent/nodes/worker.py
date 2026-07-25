@@ -20,8 +20,7 @@ def worker(payload:dict)->dict:
         )
 
 
-    blog_title = plan.blog_title
-    prompt = worker_prompt(plan, task, topic, bullets_text, evidence_text, mode)
+    prompt = worker_prompt(plan, task, topic, bullets_text, mode, evidence_text)
 
 
     section_content = llm.invoke(

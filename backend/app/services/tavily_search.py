@@ -10,7 +10,7 @@ def tavily_search(query:str,max_results:int=5)-> list[dict]:
     search_results = results.get('results', [])
     
     # Normalize the results
-    normalized: List[dict] = []
+    normalized: list[dict] = []
     for r in search_results or []:
         normalized.append(
             {

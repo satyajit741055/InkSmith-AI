@@ -25,6 +25,10 @@ class Settings(BaseSettings):
 
     HF_API_TOKEN: str
 
+    #Output Directory 
+    IMAGES_DIR: str = "images"
+    OUTPUT_DIR: str = "output"
+
 
 settings = Settings()
 

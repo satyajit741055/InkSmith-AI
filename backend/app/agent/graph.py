@@ -1,12 +1,15 @@
 from app.agent.reducer_subraph.subgraph import reducer_subgraph
+from app.agent.nodes.md_to_pdf import md_to_pdf
 from langgraph.graph import StateGraph,START,END
 from app.agent.state import State
 from app.agent.nodes.orchestrator import orchestrator
 from app.agent.nodes.worker import worker 
-from app.agent.nodes.reducer import reducer
 from app.agent.nodes.research import researcher
 from langgraph.types import Send
 from app.agent.nodes.router import router
+from langgraph.checkpoint.memory import MemorySaver
+
+
 
 def fanout(state: State):
     return [
@@ -24,23 +27,29 @@ def fanout(state: State):
     ]
 
 def route(state:State):
-    return "research" if State["needs_research"] else "orchestrator"
-
-blogGraph = StateGraph(State)
-
-blogGraph.add_node("orchestrator",orchestrator)
-blogGraph.add_node("worker",worker)
-
-blogGraph.add_node("router",router)
-blogGraph.add_node("research",researcher)
-blogGraph.add_node("reducer",reducer_subgraph)
+    return "research" if state["needs_research"] else "orchestrator"
 
 
-blogGraph.add_edge(START,"router")
-blogGraph.add_conditional_edges("router", route, ["research", "orchestrator"])
-blogGraph.add_edge("research","orchestrator")
-blogGraph.add_conditional_edges("orchestrator", fanout, ["worker"])
-blogGraph.add_edge("worker","reducer")
-blogGraph.add_edge("reducer",END)
+def build_graph():
+    checkpointer = MemorySaver()
+    blogGraph = StateGraph(State)
 
-blogGraph = blogGraph.compile()
+    blogGraph.add_node("orchestrator",orchestrator)
+    blogGraph.add_node("worker",worker)
+
+    blogGraph.add_node("router",router)
+    blogGraph.add_node("research",researcher)
+    blogGraph.add_node("reducer",reducer_subgraph)
+    blogGraph.add_node("md_to_pdf",md_to_pdf)
+
+
+    blogGraph.add_edge(START,"router")
+    blogGraph.add_conditional_edges("router", route, ["research", "orchestrator"])
+    blogGraph.add_edge("research","orchestrator")
+    blogGraph.add_conditional_edges("orchestrator", fanout, ["worker"])
+    blogGraph.add_edge("worker","reducer")
+    blogGraph.add_edge("reducer","md_to_pdf")
+    blogGraph.add_edge("md_to_pdf",END)
+
+    return blogGraph.compile(checkpointer=checkpointer)
+

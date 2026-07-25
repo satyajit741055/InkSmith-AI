@@ -14,7 +14,7 @@ class EvidencePack(BaseModel):
     evidence: list[EvidenceItem] = Field(default_factory=list)
 
 class RouterDecision(BaseModel):
-    needs_research : str
+    needs_research : bool
     mode : Literal["closed_book","hybrid","open_book"]
     queries : list[str] = Field(default_factory=list)
 
@@ -79,6 +79,9 @@ class State(TypedDict):
     merged_md: str
     md_with_placeholders: str
     image_specs: list[dict]
+    fileName: str
+    mdFilePath: str
+    pdfFilePath: str
 
 
 
