@@ -9,7 +9,14 @@ from pydantic import BaseModel, Field
 
 from app.agent.graph import build_graph
 from app.config import settings
+import logfire
 
+
+_logfire_base_url = settings.LOGFIRE_BASE_URL
+logfire.configure(
+    token=settings.LOGFIRE_TOKEN,
+    advanced=logfire.AdvancedOptions(base_url=_logfire_base_url) if _logfire_base_url else None,
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -58,19 +65,20 @@ def query(request: QueryRequest):
     """
     Generate a blog post from the given title.
     """
-    initial_state = {"title": request.title}
-    config = {"configurable": {"thread_id": request.thread_id}}
-    result = app.state.rag_agent.invoke(initial_state, config)
+    with logfire.span("🔍 /query", request_id=request.thread_id):
+        initial_state = {"title": request.title}
+        config = {"configurable": {"thread_id": request.thread_id}}
+        result = app.state.rag_agent.invoke(initial_state, config)
 
-    file_name = result.get("fileName", "")
-    md_url = f"/output/{file_name}" if file_name else None
-    pdf_url = md_url.replace(".md", ".pdf") if md_url else None
+        file_name = result.get("fileName", "")
+        md_url = f"/output/{file_name}" if file_name else None
+        pdf_url = md_url.replace(".md", ".pdf") if md_url else None
 
-    return BlogResponse(
-        file_name=file_name,
-        md_url=md_url,
-        pdf_url=pdf_url,
-    )
+        return BlogResponse(
+            file_name=file_name,
+            md_url=md_url,
+            pdf_url=pdf_url,
+        )
 
 @app.get("/files/{file_path:path}")
 def get_file(file_path: str):

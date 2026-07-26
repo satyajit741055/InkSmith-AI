@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     IMAGES_DIR: str = "images"
     OUTPUT_DIR: str = "output"
 
+    # --- OBSERVABILITY ---
+    LOGFIRE_TOKEN: str | None = None
+    LOGFIRE_BASE_URL: str | None = None
+
 
 settings = Settings()
 
