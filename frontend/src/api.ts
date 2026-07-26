@@ -7,14 +7,20 @@ function formatSeconds(total: number): string {
   return `${seconds}s`;
 }
 
-export interface QueryResponse {
-  final: string;
-  file_name: string;
-  md_url: string | null;
-  pdf_url: string | null;
+export interface JobResponse {
+  job_id: string;
 }
 
-export async function generateBlog(title: string): Promise<QueryResponse> {
+export interface JobStatusResponse {
+  status: "pending" | "running" | "success" | "failed" | string;
+  final: string | null;
+  file_name: string | null;
+  md_url: string | null;
+  pdf_url: string | null;
+  error: string | null;
+}
+
+export async function submitBlogJob(title: string): Promise<JobResponse> {
   const res = await fetch(`${BASE}/query`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -22,7 +28,6 @@ export async function generateBlog(title: string): Promise<QueryResponse> {
   });
 
   if (!res.ok) {
-    // Gracefully handle rate limiting
     if (res.status === 429) {
       const retryAfter = res.headers.get("retry-after");
       const secs = retryAfter ? Number(retryAfter) : NaN;
@@ -32,7 +37,17 @@ export async function generateBlog(title: string): Promise<QueryResponse> {
       throw new Error(msg);
     }
 
-    // Fallback for other server errors
+    const err = await res.json().catch(() => ({} as any));
+    throw new Error(err.detail || `Server error: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function getJobStatus(jobId: string): Promise<JobStatusResponse> {
+  const res = await fetch(`${BASE}/job_status/${jobId}`);
+
+  if (!res.ok) {
     const err = await res.json().catch(() => ({} as any));
     throw new Error(err.detail || `Server error: ${res.status}`);
   }
