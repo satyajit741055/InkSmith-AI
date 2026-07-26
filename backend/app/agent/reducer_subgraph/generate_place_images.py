@@ -28,8 +28,8 @@ def generate_and_place_images(state: State) -> dict:
 
 
         for spec in image_specs:
-            placeholder = spec["placeholder"]
-            filename = spec["filename"]
+            placeholder = spec["place_holder"]
+            filename = spec["file_name"]
             out_path = images_dir / filename
 
             # generate only if needed

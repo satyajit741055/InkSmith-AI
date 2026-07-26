@@ -18,6 +18,31 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 
+from celery import Celery
+from celery.result import AsyncResult
+
+
+celery_app = Celery(
+    "query",
+    broker=settings.CELERY_BROKER_URL,
+    backend=settings.CELERY_RESULT_BACKEND,
+)
+
+celery_app.conf.update(
+    result_expires=3600,          
+    task_track_started=True, 
+)
+
+
+_rag_agent = None
+
+def get_rag_agent():
+    global _rag_agent
+    if _rag_agent is None:
+        _rag_agent = build_graph()
+    return _rag_agent
+
+
 limiter = Limiter(key_func=get_remote_address)
 
 
@@ -29,7 +54,7 @@ logfire.configure(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.rag_agent = build_graph()
+    app.state.rag_agent = get_rag_agent()
     Path(settings.OUTPUT_DIR).mkdir(exist_ok=True)
     Path(settings.IMAGES_DIR).mkdir(exist_ok=True)
     yield
@@ -44,10 +69,12 @@ class QueryRequest(BaseModel):
     thread_id: Optional[str] = "default"
 
 class BlogResponse(BaseModel):
-    final: str
-    file_name: str
-    md_url: str | None
-    pdf_url: str | None
+    status: str
+    final: str | None = None
+    file_name: str | None = None
+    md_url: str | None = None
+    pdf_url: str | None = None
+    error: str | None = None
 
 # Serve generated files directly
 app.mount("/output", StaticFiles(directory=settings.OUTPUT_DIR), name="output")
@@ -70,6 +97,22 @@ def get_graph_image():
     except Exception as e:
         return {"error": f"Could not generate graph image: {e}"}
 
+def _make_json_serializable(obj):
+    """Recursively convert Pydantic models and other objects to JSON-safe types."""
+    if isinstance(obj, BaseModel):
+        return _make_json_serializable(obj.model_dump())
+    if isinstance(obj, dict):
+        return {k: _make_json_serializable(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_make_json_serializable(v) for v in obj]
+    return obj
+
+
+@celery_app.task
+def run_agent(initial_state:dict,config:dict):
+    agent = get_rag_agent()
+    result = agent.invoke(initial_state, config)
+    return _make_json_serializable(result)
 
 @app.post("/query")
 @limiter.limit("5/hour")
@@ -80,26 +123,39 @@ def query(request: Request, body: QueryRequest):
     with logfire.span("🔍 /query", request_id=body.thread_id):
         initial_state = {"title": body.title}
         config = {"configurable": {"thread_id": body.thread_id}}
-        try:
-            result = app.state.rag_agent.invoke(initial_state, config)
-        except Exception as e:
-            logfire.error("Graph execution failed", error=str(e), title=body.title)
-            raise HTTPException(status_code=500, detail="Blog generation failed")
+        
+        task = run_agent.delay(initial_state, config)
+        
+        return {"job_id": task.id}
+        
+@app.get("/job_status/{job_id}",response_model=BlogResponse)
+def get_job_status(job_id: str):
+    task = AsyncResult(job_id, app=celery_app)
 
-        file_name = result.get("fileName", "")
+    if task.state == "PENDING":
+        return BlogResponse(status="pending")
 
+    if task.state in ("STARTED", "RETRY"):
+        return BlogResponse(status="running")
+
+    if task.state == "FAILURE":
+        return BlogResponse(status="failed", error=str(task.result))
+
+    if task.state == "SUCCESS":
+        result = task.result or {}
+        file_name = result.get("file_name", "")
         md_url = f"/output/{file_name}" if file_name else None
-        # Use secured /files endpoint so PDFs render inline in the browser
-        pdf_url = (
-            f"/files/{file_name.replace('.md', '.pdf')}" if file_name else None
-        )
-
+        pdf_url = f"/files/{file_name.replace('.md', '.pdf')}" if file_name else None
         return BlogResponse(
+            status="success",
             final=result.get("final", ""),
             file_name=file_name,
             md_url=md_url,
             pdf_url=pdf_url,
         )
+
+    return BlogResponse(status=task.state.lower())
+
 
 @app.get("/files/{file_path:path}")
 def get_file(file_path: str):

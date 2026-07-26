@@ -1,10 +1,10 @@
 import { FileText, Download, Eye, ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useState } from "react";
-import { getFileUrl, type QueryResponse } from "../api";
+import { getFileUrl, type JobStatusResponse } from "../api";
 
 interface Props {
-  result: QueryResponse;
+  result: JobStatusResponse;
   onReset: () => void;
 }
 
@@ -82,11 +82,11 @@ export default function BlogResult({ result, onReset }: Props) {
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
         {view === "preview" ? (
           <div className="prose prose-indigo max-w-none p-8">
-            <ReactMarkdown>{result.final}</ReactMarkdown>
+            <ReactMarkdown>{result.final ?? ""}</ReactMarkdown>
           </div>
         ) : (
           <pre className="max-h-[70vh] overflow-auto p-6 text-sm text-gray-700 bg-gray-50 rounded-xl">
-            <code>{result.final}</code>
+            <code>{result.final ?? ""}</code>
           </pre>
         )}
       </div>

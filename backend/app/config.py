@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     IMAGES_DIR: str = "images"
     OUTPUT_DIR: str = "output"
 
+    # Celery Configuration
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
+
     # --- OBSERVABILITY ---
     LOGFIRE_TOKEN: str | None = None
     LOGFIRE_BASE_URL: str | None = None
