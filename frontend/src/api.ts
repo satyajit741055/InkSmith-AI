@@ -9,9 +9,7 @@ function formatSeconds(total: number): string {
 
 export interface QueryResponse {
   final: string;
-  fileName: string;
-  mdFilePath: string;
-  pdfFilePath: string;
+  file_name: string;
   md_url: string | null;
   pdf_url: string | null;
 }
