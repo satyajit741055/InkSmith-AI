@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Response,Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -10,6 +10,13 @@ from pydantic import BaseModel, Field
 from app.agent.graph import build_graph
 from app.config import settings
 import logfire
+
+from slowapi import Limiter, _rate_limit_exceeded_handler 
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+
+limiter = Limiter(key_func=get_remote_address)
 
 
 _logfire_base_url = settings.LOGFIRE_BASE_URL
@@ -27,7 +34,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="InkSmith AI Blog Generator", lifespan=lifespan)
-
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 class QueryRequest(BaseModel):
     title: str = Field(..., min_length=3, max_length=200)
@@ -44,7 +52,7 @@ app.mount("/images", StaticFiles(directory=settings.IMAGES_DIR), name="images")
 
 
 @app.get("/")
-def read_root():
+def read_root(request: Request):
     return {"message": "InkSmith AI Blog Generator"}
 
 
@@ -61,16 +69,18 @@ def get_graph_image():
 
 
 @app.post("/query")
-def query(request: QueryRequest):
+@limiter.limit("5/minute")
+def query(request: Request, body: QueryRequest):
     """
     Generate a blog post from the given title.
     """
-    with logfire.span("🔍 /query", request_id=request.thread_id):
-        initial_state = {"title": request.title}
-        config = {"configurable": {"thread_id": request.thread_id}}
-        result = app.state.rag_agent.invoke(initial_state, config)
+    with logfire.span("🔍 /query", request_id=body.thread_id):
+        initial_state = {"title": body.title}
+        config = {"configurable": {"thread_id": body.thread_id}}
+        # result = app.state.rag_agent.invoke(initial_state, config)
 
-        file_name = result.get("fileName", "")
+        # file_name = result.get("fileName", "")
+        file_name = "sample.md"
         md_url = f"/output/{file_name}" if file_name else None
         pdf_url = md_url.replace(".md", ".pdf") if md_url else None
 
