@@ -4,7 +4,7 @@ import logfire
 
 def md_to_pdf(state:State)->dict:
     with logfire.span("Converting Markdown to PDF"):
-        mdFilePath = state["mdFilePath"]
-        pdfFilePath = convert_to_pdf(mdFilePath)
-        logfire.info("Markdown converted to PDF", md_file_path=mdFilePath, pdf_file_path=pdfFilePath)
-        return {"pdfFilePath": pdfFilePath}
+        md_file_path = state["md_file_path"]
+        pdf_file_path = convert_to_pdf(md_file_path)
+        logfire.info("Markdown converted to PDF", md_file_path=md_file_path, pdf_file_path=pdf_file_path)
+        return {"pdf_file_path": pdf_file_path}

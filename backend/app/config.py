@@ -20,10 +20,8 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str 
 
     # Tavily API Configuration
-    TAVILY_API_KEY: str 
-
+    TAVILY_API_KEY: str
     GOOGLE_API_KEY: str
-
     HF_API_TOKEN: str
 
     #Output Directory 
@@ -38,9 +36,7 @@ class Settings(BaseSettings):
     LANGSMITH_PROJECT: str = "blog_Agent"
     LANGSMITH_ENDPOINT: str = "https://api.smith.langchain.com"
 
-
 settings = Settings()
-
 
 
 def apply_langchain_env():
