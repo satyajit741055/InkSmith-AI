@@ -72,6 +72,7 @@ Notes:
 
 import io
 
+import logfire
 from huggingface_hub import InferenceClient
 from huggingface_hub.errors import HfHubHTTPError
 
@@ -95,20 +96,24 @@ def _hf_generate_image_bytes(prompt: str) -> bytes:
 
     client = InferenceClient(api_key=api_token, provider="auto")
 
-    try:
-        image = client.text_to_image(prompt, model=MODEL_ID)
-    except HfHubHTTPError as e:
-        status = getattr(e.response, "status_code", None)
-        if status == 429:
-            raise RuntimeError("HF rate limit hit (free tier quota exceeded).") from e
-        if status in (402, 403):
-            raise RuntimeError("HF billing/quota error - out of free credits.") from e
-        raise RuntimeError(f"HF inference failed: {e}") from e
+    with logfire.span("HF image generation", model=MODEL_ID, prompt=prompt[:80]):
+        try:
+            image = client.text_to_image(prompt, model=MODEL_ID)
+        except HfHubHTTPError as e:
+            status = getattr(e.response, "status_code", None)
+            logfire.error("HF image generation failed", status=status, prompt=prompt[:80])
+            if status == 429:
+                raise RuntimeError("HF rate limit hit (free tier quota exceeded).") from e
+            if status in (402, 403):
+                raise RuntimeError("HF billing/quota error - out of free credits.") from e
+            raise RuntimeError(f"HF inference failed: {e}") from e
 
-    # image is a PIL.Image object - serialize to PNG bytes
-    buf = io.BytesIO()
-    image.save(buf, format="PNG")
-    return buf.getvalue()
+        # image is a PIL.Image object - serialize to PNG bytes
+        buf = io.BytesIO()
+        image.save(buf, format="PNG")
+        img_bytes = buf.getvalue()
+        logfire.info("HF image generated", size_bytes=len(img_bytes), prompt=prompt[:80])
+        return img_bytes
 
 
 if __name__ == "__main__":

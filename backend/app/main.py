@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
+# Import config first so LangSmith env vars are set before any LangChain clients import
+import app.config  # noqa: F401
 from fastapi import FastAPI, HTTPException, Response,Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -42,6 +44,7 @@ class QueryRequest(BaseModel):
     thread_id: Optional[str] = "default"
 
 class BlogResponse(BaseModel):
+    final: str
     file_name: str
     md_url: str | None
     pdf_url: str | None
@@ -77,14 +80,22 @@ def query(request: Request, body: QueryRequest):
     with logfire.span("🔍 /query", request_id=body.thread_id):
         initial_state = {"title": body.title}
         config = {"configurable": {"thread_id": body.thread_id}}
-        # result = app.state.rag_agent.invoke(initial_state, config)
+        try:
+            result = app.state.rag_agent.invoke(initial_state, config)
+        except Exception as e:
+            logfire.error("Graph execution failed", error=str(e), title=body.title)
+            raise HTTPException(status_code=500, detail="Blog generation failed")
 
-        # file_name = result.get("fileName", "")
-        file_name = "sample.md"
+        file_name = result.get("fileName", "")
+
         md_url = f"/output/{file_name}" if file_name else None
-        pdf_url = md_url.replace(".md", ".pdf") if md_url else None
+        # Use secured /files endpoint so PDFs render inline in the browser
+        pdf_url = (
+            f"/files/{file_name.replace('.md', '.pdf')}" if file_name else None
+        )
 
         return BlogResponse(
+            final=result.get("final", ""),
             file_name=file_name,
             md_url=md_url,
             pdf_url=pdf_url,
