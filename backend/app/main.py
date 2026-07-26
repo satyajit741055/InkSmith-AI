@@ -72,7 +72,7 @@ def get_graph_image():
 
 
 @app.post("/query")
-@limiter.limit("5/minute")
+@limiter.limit("5/hour")
 def query(request: Request, body: QueryRequest):
     """
     Generate a blog post from the given title.

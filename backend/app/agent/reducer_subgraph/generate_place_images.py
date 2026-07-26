@@ -16,12 +16,12 @@ def generate_and_place_images(state: State) -> dict:
     with logfire.span("Generating and placing images"):
         # Sanitize filename: remove invalid Windows characters
         safe_title = re.sub(r'[<>:"/\\|?*]', '', plan.blog_title)
-        fileName = safe_title.lower().replace(" ","_")+".md"
+        file_name = safe_title.lower().replace(" ","_")+".md"
         folder = Path(settings.OUTPUT_DIR) 
-        output_path = folder / fileName
+        output_path = folder / file_name
         if not image_specs:
             Path(output_path).write_text(md, encoding="utf-8")
-            return {"final": md, "fileName": fileName, "mdFilePath": str(output_path)}
+            return {"final": md, "file_name": file_name, "md_file_path": str(output_path)}
         
         images_dir = Path(settings.IMAGES_DIR)
         images_dir.mkdir(exist_ok=True)
@@ -64,8 +64,8 @@ def generate_and_place_images(state: State) -> dict:
         
         output_path.write_text(md,encoding="utf-8")
 
-        logfire.info("Images generated and placed", file_name=fileName, md_file_path=str(output_path), image_count=len(image_specs))
-        return {"final": md, "fileName": fileName, "mdFilePath": str(output_path)}
+        logfire.info("Images generated and placed", file_name=file_name, md_file_path=str(output_path), image_count=len(image_specs))
+        return {"final": md, "file_name": file_name, "md_file_path": str(output_path)}
             
        
 

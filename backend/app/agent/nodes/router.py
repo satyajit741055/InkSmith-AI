@@ -1,7 +1,7 @@
 from app.agent.llm import llm
 from app.agent.state import State,RouterDecision
 from langchain_core.messages import SystemMessage, HumanMessage
-from app.agent.prompts import routerPrompt
+from app.agent.prompts import router_prompt
 import logfire
 
 
@@ -10,7 +10,7 @@ def router(state:State):
         topic  = state["title"]
         decision = llm.with_structured_output(RouterDecision).invoke(
             [
-                SystemMessage(content=routerPrompt()),
+                SystemMessage(content=router_prompt()),
                 HumanMessage(f"Topic : {topic}")
             ]
         )

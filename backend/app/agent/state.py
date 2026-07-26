@@ -49,8 +49,8 @@ class Plan(BaseModel):
 
 
 class ImageSpec(BaseModel):
-    placeholder: str = Field(..., description="e.g. [[IMAGE_1]]")
-    filename: str = Field(..., description="Save under images/, e.g. qkv_flow.png")
+    place_holder: str = Field(..., description="e.g. [[IMAGE_1]]")
+    file_name: str = Field(..., description="Save under images/, e.g. qkv_flow.png")
     alt: str
     caption: str
     prompt: str = Field(..., description="Prompt to send to the image model.")
@@ -77,9 +77,9 @@ class State(TypedDict):
     merged_md: str
     md_with_placeholders: str
     image_specs: list[dict]
-    fileName: str
-    mdFilePath: str
-    pdfFilePath: str
+    file_name: str
+    md_file_path: str
+    pdf_file_path: str
 
 
 

@@ -8,7 +8,7 @@ def merge_content(state:State)->dict:
 
         body = "\n\n".join(ordered_sections).strip()
 
-        finalMd = f"# {title}\n\n{body}\n\n"
-        logfire.info("Content merged", title=title, section_count=len(ordered_sections), total_length=len(finalMd))
+        final_md = f"# {title}\n\n{body}\n\n"
+        logfire.info("Content merged", title=title, section_count=len(ordered_sections), total_length=len(final_md))
 
-        return {"merged_md": finalMd}
+        return {"merged_md": final_md}

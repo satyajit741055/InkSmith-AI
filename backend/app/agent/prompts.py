@@ -109,7 +109,7 @@ def worker_prompt(plan: Plan, task: Task, topic: str,bullets_text: str,mode:str,
     )
 
 
-def routerPrompt():
+def router_prompt():
     return """You are a routing module for a technical blog planner.
 
         Decide whether web research is needed BEFORE planning.
