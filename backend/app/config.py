@@ -22,5 +22,10 @@ class Settings(BaseSettings):
     # Redis Configurations
     REDIS_URL: str
 
+    # JWT Configurations
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
 
 settings = Settings()
