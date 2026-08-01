@@ -58,3 +58,55 @@ export async function getJobStatus(jobId: string): Promise<JobStatusResponse> {
 export function getFileUrl(path: string): string {
   return `${BASE}${path}`;
 }
+
+export interface UserCreate {
+  username: string;
+  email: string;
+  password: string;
+}
+
+export interface UserLogin {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+}
+
+export interface UserResponse {
+  id: number;
+  username: string;
+  email: string;
+}
+
+export async function register(user: UserCreate): Promise<UserResponse> {
+  const res = await fetch(`${BASE}/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(user),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({} as any));
+    throw new Error(err.detail || `Server error: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function login(user: UserLogin): Promise<LoginResponse> {
+  const res = await fetch(`${BASE}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(user),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({} as any));
+    throw new Error(err.detail || `Server error: ${res.status}`);
+  }
+
+  return res.json();
+}

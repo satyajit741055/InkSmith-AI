@@ -17,6 +17,19 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
+def _make_json_serializable(obj):
+    """Recursively convert Pydantic models and other objects to JSON-safe types."""
+    if isinstance(obj, BaseModel):
+        return _make_json_serializable(obj.model_dump())
+    if isinstance(obj, dict):
+        return {k: _make_json_serializable(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_make_json_serializable(v) for v in obj]
+    return obj
+
+from db.database import engine, get_db
+
+from routers.login import router
 
 from celery import Celery
 from celery.result import AsyncResult
@@ -58,11 +71,15 @@ async def lifespan(app: FastAPI):
     Path(settings.OUTPUT_DIR).mkdir(exist_ok=True)
     Path(settings.IMAGES_DIR).mkdir(exist_ok=True)
     yield
+    await engine.dispose()
+
 
 
 app = FastAPI(title="InkSmith AI Blog Generator", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+app.include_router(router,tags=["Authentication"])
 
 class QueryRequest(BaseModel):
     title: str = Field(..., min_length=3, max_length=200)
@@ -96,16 +113,6 @@ def get_graph_image():
         return Response(content=png_bytes, media_type="image/png")
     except Exception as e:
         return {"error": f"Could not generate graph image: {e}"}
-
-def _make_json_serializable(obj):
-    """Recursively convert Pydantic models and other objects to JSON-safe types."""
-    if isinstance(obj, BaseModel):
-        return _make_json_serializable(obj.model_dump())
-    if isinstance(obj, dict):
-        return {k: _make_json_serializable(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [_make_json_serializable(v) for v in obj]
-    return obj
 
 
 @celery_app.task
@@ -155,6 +162,8 @@ def get_job_status(job_id: str):
         )
 
     return BlogResponse(status=task.state.lower())
+
+
 
 
 @app.get("/files/{file_path:path}")

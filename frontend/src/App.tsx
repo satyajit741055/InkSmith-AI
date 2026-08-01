@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
+import AuthPage from "./components/AuthPage";
 import Header from "./components/Header";
 import BlogForm from "./components/BlogForm";
 import BlogResult from "./components/BlogResult";
@@ -12,7 +14,7 @@ import { AlertCircle } from "lucide-react";
 
 const POLL_INTERVAL_MS = 2000;
 
-function App() {
+function Home() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [result, setResult] = useState<JobStatusResponse | null>(null);
@@ -114,6 +116,18 @@ function App() {
         )}
       </main>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<AuthPage mode="login" />} />
+        <Route path="/register" element={<AuthPage mode="register" />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

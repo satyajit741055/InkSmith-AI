@@ -40,6 +40,14 @@ class Settings(BaseSettings):
     LANGSMITH_PROJECT: str = "blog_Agent"
     LANGSMITH_ENDPOINT: str = "https://api.smith.langchain.com"
 
+    # ---DataBase
+    DATABASE_URL: str = "postgresql+asyncpg://inksmith:inksmith_123@localhost:5432/inksmith"
+
+    # ---JWT
+    SECRET_KEY: str = "Hare Krishna"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
 settings = Settings()
 
 
