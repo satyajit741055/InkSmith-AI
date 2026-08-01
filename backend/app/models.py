@@ -1,7 +1,7 @@
 from sqlalchemy import DateTime,ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column,relationship
 from app.database import Base
-from datetime import datetime
+from datetime import datetime, timezone
 
 class User(Base):
     __tablename__ = "users"
@@ -10,7 +10,7 @@ class User(Base):
     username : Mapped[str] = mapped_column(String(50), unique=True, index=True)
     email : Mapped[str] = mapped_column(String(100), unique=True, index=True)
     hashed_password : Mapped[str] = mapped_column(String(255))
-    created_at : Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at : Mapped[datetime] = mapped_column(DateTime, datetime.now(timezone.utc))
 
 
 class BlogGeneration(Base):
@@ -21,7 +21,7 @@ class BlogGeneration(Base):
     topic : Mapped[str] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(50), default="pending")
     content : Mapped[str] = mapped_column(Text,nullable=True)
-    created_at : Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at : Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at : Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
+    updated_at : Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     
