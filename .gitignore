@@ -218,8 +218,8 @@ __marimo__/
 .streamlit/secrets.toml
 
 
-PRODUCTION_PLAN.md
-PLAN_V2.md
+IMPLEMENTATION_STEPS.md
+PROJECT_SPEC.md
 # output
 learning.md
 test.md
