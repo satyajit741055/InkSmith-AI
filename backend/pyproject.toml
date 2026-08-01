@@ -18,3 +18,8 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.51",
     "uvicorn>=0.52.0",
 ]
+
+[dependency-groups]
+dev = [
+    "psycopg2-binary>=2.9.12",
+]
