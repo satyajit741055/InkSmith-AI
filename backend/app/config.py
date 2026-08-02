@@ -27,5 +27,12 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # LLM Configurations
+    OPENAI_API_KEY: str
+    GROQ_API_KEY: str
+
+    # Output Directory 
+    OUTPUT_DIR: str = "blogs"
+
 
 settings = Settings()
