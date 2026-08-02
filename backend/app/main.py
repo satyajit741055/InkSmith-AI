@@ -3,6 +3,7 @@ from app.database import engine, Base
 from app.routers.auth import router as auth_router
 from app.routers.blog import router as blog_router
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 
 @asynccontextmanager
@@ -21,3 +22,5 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"]
 )
 app.include_router(blog_router, prefix="/api/v1/blog", tags=["blog"])
+
+app.mount("/blogs", StaticFiles(directory="blogs"), name="blogs")
