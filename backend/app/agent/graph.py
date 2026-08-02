@@ -38,7 +38,7 @@ graph = graph.compile(checkpointer=checkpointer)
 
 
 if __name__ == "__main__":
-    test_state = {"user_prompt": "write a blog on AI in healthcare"}
+    test_state = {"user_prompt": "write a blog on Future of AI in technical depth"}
     config = {"configurable": {"thread_id": "thread-1"}}
 
     result = graph.invoke(test_state, config)

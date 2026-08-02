@@ -13,7 +13,6 @@ def orchestrator(state: AgentState) -> AgentState:
             HumanMessage(content=user_prompt),
         ]
     )
-    print(response)
     return {
         "plan": response
     }
