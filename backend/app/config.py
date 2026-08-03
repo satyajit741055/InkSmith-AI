@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
     POSTGRES_URL: str
+    POSTGRES_URL_SYNC: str
     POSTGRES_ECHO: bool = True
 
     # Redis Configurations

@@ -30,7 +30,17 @@ class UserPrompt(BaseModel):
     
     model_config = ConfigDict(from_attributes=True)
 
-class BlogResponse(BaseModel):
-    pdf_url : str
+
+class BlogGenerationId(BaseModel):
+    thread_id : str
     
     model_config = ConfigDict(from_attributes=True)
+
+class BlogGenerationResponse(BaseModel):
+    thread_id : str
+    status : str
+    pdf_url : str | None = None
+    error_message : str | None = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
