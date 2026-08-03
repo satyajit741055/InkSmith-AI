@@ -4,8 +4,10 @@ from app.routers.auth import router as auth_router
 from app.routers.blog import router as blog_router
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from pathlib import Path
+from app.config import settings
 
-
+Path(settings.OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     # Startup: Initialize database, caches, etc.
@@ -23,4 +25,4 @@ app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"]
 )
 app.include_router(blog_router, prefix="/api/v1/blog", tags=["blog"])
 
-app.mount("/blogs", StaticFiles(directory="blogs"), name="blogs")
+app.mount("/blogs", StaticFiles(directory=settings.OUTPUT_DIR), name="blogs")
