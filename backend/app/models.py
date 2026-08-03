@@ -23,7 +23,7 @@ class BlogGeneration(Base):
     id : Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id : Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
     thread_id : Mapped[str] = mapped_column(String(255),unique=True,nullable=False)
-    prompt : Mapped[str] = mapped_column(String(255))
+    prompt : Mapped[str] = mapped_column(Text,nullable=False)
     status: Mapped[str] = mapped_column(String(50), default="pending")
     content : Mapped[str] = mapped_column(Text,nullable=True)
     pdf_path : Mapped[str] = mapped_column(String(255),nullable=True)
