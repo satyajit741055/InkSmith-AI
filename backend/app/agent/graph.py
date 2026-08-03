@@ -11,12 +11,15 @@ from langgraph.checkpoint.memory import MemorySaver
 checkpointer = MemorySaver()
 
 def fanout(state:AgentState):
+    total_tasks = len(state["plan"].tasks)
     return [
         Send(
             "writer",
             {
                 "task": task.model_dump(),
-                "plan":state["plan"].model_dump()
+                "plan": state["plan"].model_dump(),
+                "thread_id": state.get("thread_id"),
+                "total_tasks": total_tasks
             },
         )
         for task in state["plan"].tasks
