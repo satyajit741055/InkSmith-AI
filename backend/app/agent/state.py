@@ -32,3 +32,5 @@ class AgentState(TypedDict, total=False):
     file_name: str
     file_path: str
     pdf_path: str
+
+    thread_id: str

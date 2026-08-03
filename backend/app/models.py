@@ -25,6 +25,7 @@ class BlogGeneration(Base):
     thread_id : Mapped[str] = mapped_column(String(255),unique=True,nullable=False)
     prompt : Mapped[str] = mapped_column(Text,nullable=False)
     status: Mapped[str] = mapped_column(String(50), default="pending")
+    current_step: Mapped[str] = mapped_column(String(50))
     content : Mapped[str] = mapped_column(Text,nullable=True)
     pdf_path : Mapped[str] = mapped_column(String(255),nullable=True)
     created_at: Mapped[datetime] = mapped_column(

@@ -56,6 +56,7 @@ async def get_blog_status(
     return BlogGenerationResponse(
         thread_id=entry.thread_id,
         status=entry.status,
+        current_step=entry.current_step,
         pdf_url=f"/blogs/{Path(entry.pdf_path).name}" if entry.pdf_path else None,
         error_message=entry.error_message if entry.status == "failed" else None,
     )

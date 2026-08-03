@@ -37,10 +37,11 @@ class BlogGenerationId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class BlogGenerationResponse(BaseModel):
-    thread_id : str
-    status : str
-    pdf_url : str | None = None
-    error_message : str | None = None
+    thread_id: str
+    status: str
+    current_step: str | None = None
+    pdf_url: str | None = None
+    error_message: str | None = None
     
     model_config = ConfigDict(from_attributes=True)
 
