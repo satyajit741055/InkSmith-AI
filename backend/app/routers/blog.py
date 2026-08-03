@@ -3,8 +3,9 @@ from app.services.auth_service import current_user
 from app.database import get_db
 from app.utils.threadId import generate_id
 from app.models import BlogGeneration, User
+from app.tasks.blog_tasks import generate_blog_task
 from fastapi import APIRouter,Depends
-from app.schemas import UserPrompt, BlogResponse
+from app.schemas import UserPrompt, BlogGenerationId, BlogGenerationResponse
 from app.agent.graph import graph
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -16,7 +17,7 @@ router = APIRouter()
 
 @router.post(
     "/",
-    response_model=BlogResponse
+    response_model=BlogGenerationId
 )
 async def generate_blog(
     prompt:UserPrompt,
@@ -26,7 +27,6 @@ async def generate_blog(
     prompt_text = prompt.prompt
     user_id = current_user.id
     thread_id = generate_id()
-
     
     new_entry = BlogGeneration(
         user_id=user_id,
@@ -38,25 +38,24 @@ async def generate_blog(
     await db.commit()
     await db.refresh(new_entry)
     
-    config = {"configurable": {"thread_id": thread_id}}
-    try:
-        result = graph.invoke({"user_prompt": prompt_text}, config=config)
-        pdf_path = result["pdf_path"]
-        final_content = result["final_content"]
-        
-        new_entry.status = "completed"
-        new_entry.pdf_path = pdf_path
-        new_entry.content = final_content
-        await db.commit()
-        await db.refresh(new_entry)
-    except Exception as e:
-        new_entry.status = "failed"
-        new_entry.error_message = str(e)
-        await db.commit()
+    generate_blog_task.delay(thread_id)
+    return BlogGenerationId(thread_id=thread_id)
 
-        print(f"Error generating blog: {e}")
-        raise HTTPException(status_code=500, detail="Blog generation failed")
-    
-    
-    
-    return BlogResponse(pdf_url=f"/blogs/{Path(pdf_path).name}")
+
+@router.get("/{blog_id}", response_model=BlogGenerationResponse)
+async def get_blog_status(
+    blog_id: str,
+    current_user: current_user,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    result = await db.execute(select(BlogGeneration).where(BlogGeneration.thread_id == blog_id))
+
+    entry = result.scalar_one_or_none()
+    if not entry or entry.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Not found")
+    return BlogGenerationResponse(
+        thread_id=entry.thread_id,
+        status=entry.status,
+        pdf_url=f"/blogs/{Path(entry.pdf_path).name}" if entry.pdf_path else None,
+        error_message=entry.error_message if entry.status == "failed" else None,
+    )
