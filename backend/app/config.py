@@ -31,9 +31,13 @@ class Settings(BaseSettings):
     # LLM Configurations
     OPENAI_API_KEY: str
     GROQ_API_KEY: str
+    HF_API_KEY: str
 
     # Output Directory 
     OUTPUT_DIR: str = "blogs"
+
+    # Tavily 
+    TAVILY_API_KEY : str 
 
 
 settings = Settings()

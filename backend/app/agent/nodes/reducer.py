@@ -13,7 +13,7 @@ def reducer(state: AgentState) -> AgentState:
     sections = sorted(state["sections"], key=lambda x: x[0])
     body = "\n\n".join(content for _, content in sections)
     final_content = f"# {state['plan'].blog_title}\n\n" + body
-    safe_title = re.sub(r'[<>:"/\\|?*]', '', state["plan"].blog_title)
+    safe_title = re.sub(r'[<>:"/\\|?*]', '', state["topic"])
 
     file_path = Path(settings.OUTPUT_DIR) / f"{safe_title.replace(' ', '_').lower()}.md"
     file_path.parent.mkdir(parents=True, exist_ok=True)

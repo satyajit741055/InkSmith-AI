@@ -1,4 +1,4 @@
-from app.agent.state import AgentState, Plan, Task
+from app.agent.state import  Plan, Task,EvidenceItem
 from app.services.llm import llm_groq
 from app.agent.prompts import WRITER_PROMPT
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -10,7 +10,7 @@ def writer(payload:dict)->dict:
     plan = Plan(**payload["plan"])
     thread_id = payload.get("thread_id")
     total_tasks = payload.get("total_tasks", 7)
-
+    evidence = [EvidenceItem(**e) for e in payload.get("evidence", [])]
 
     if thread_id:
         update_graph_progress(
@@ -18,16 +18,25 @@ def writer(payload:dict)->dict:
             "writing",
             f"Writing section {task.id} of {total_tasks}: {task.title}"
         )
-    
+    evidence_text = "\n".join(
+        f"- {e.title} | {e.url}"
+        for e in evidence[:20]
+    )
     bullets_text = "\n".join(f"- {b}" for b in task.bullets)
     task_context = f"""Blog title: {plan.blog_title}
 Audience: {plan.audience}
 Tone: {plan.tone}
 Blog kind: {plan.blog_kind}
-
+Topic: {payload['topic']}
+Mode: {payload.get('mode')}
+requires_research: {task.requires_research}
+requires_citations: {task.requires_citations}
+requires_code: {task.requires_code}
 Section Title: {task.title}
 Section Type: {task.section_type}
+recency_days={payload.get('recency_days')})
 Goal: {task.goal}
+Evidence (ONLY cite these URLs):\n{evidence_text}
 Target words: {task.target_words}
 Requires code: {task.requires_code}
 
