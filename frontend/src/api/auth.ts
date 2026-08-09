@@ -26,7 +26,7 @@ export const authAPI = {
     }),
 
   register: (data: RegisterRequest) =>
-    client.post<AuthResponse>('/auth/register', data),
+    client.post<AuthResponse>('/auth/sign-up', data),
 
   getCurrentUser: () =>
     client.get('/auth/me'),

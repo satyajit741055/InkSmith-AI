@@ -19,38 +19,34 @@ def generate_and_place_images(state: AgentState) -> dict:
     md = state.get("md_with_placeholders") or state["merged_md"]
     image_specs = state.get("image_specs", []) or []
 
-    # If no images requested, just write merged markdown
-    if not image_specs:
-        filename = f"{state["topic"]}.md"
-        Path(filename).write_text(md, encoding="utf-8")
-        return {"final": md}
+    # Generate and place images (skipped when image_specs is empty)
+    if image_specs:
+        images_dir = Path("images2")
+        images_dir.mkdir(exist_ok=True)
 
-    images_dir = Path("images2")
-    images_dir.mkdir(exist_ok=True)
+        for spec in image_specs:
+            placeholder = spec["placeholder"]
+            filename = PurePosixPath(spec["filename"]).name
+            out_path = images_dir / filename
 
-    for spec in image_specs:
-        placeholder = spec["placeholder"]
-        filename = PurePosixPath(spec["filename"]).name
-        out_path = images_dir / filename
+            # generate only if needed
+            if not out_path.exists():
+                try:
+                    img_bytes = _generate_openai_image_bytes(prompt=spec["prompt"],quality=spec["quality"],size=spec["size"])
+                    out_path.write_bytes(img_bytes)
+                except Exception as e:
+                    # graceful fallback: keep doc usable
+                    prompt_block = (
+                        f"> **[IMAGE GENERATION FAILED]** {spec.get('caption','')}\n>\n"
+                        f"> **Alt:** {spec.get('alt','')}\n>\n"
+                        f"> **Prompt:** {spec.get('prompt','')}\n>\n"
+                        f"> **Error:** {e}\n"
+                    )
+                    md = md.replace(placeholder, prompt_block)
+                    continue
 
-        # generate only if needed
-        if not out_path.exists():
-            try:
-                img_bytes = _generate_openai_image_bytes(prompt=spec["prompt"],quality=spec["quality"],size=spec["size"])
-                out_path.write_bytes(img_bytes)
-            except Exception as e:
-                # graceful fallback: keep doc usable
-                prompt_block = (
-                    f"> **[IMAGE GENERATION FAILED]** {spec.get('caption','')}\n>\n"
-                    f"> **Alt:** {spec.get('alt','')}\n>\n"
-                    f"> **Prompt:** {spec.get('prompt','')}\n>\n"
-                    f"> **Error:** {e}\n"
-                )
-                md = md.replace(placeholder, prompt_block)
-                continue
-
-        img_md = f"![{spec['alt']}](../images2/{filename})\n*{spec['caption']}*"
-        md = md.replace(placeholder, img_md)
+            img_md = f"![{spec['alt']}](../images2/{filename})\n*{spec['caption']}*"
+            md = md.replace(placeholder, img_md)
 
     safe_title = re.sub(r'[<>:"/\\|?*]', '', state["topic"])
     file_path = Path(settings.OUTPUT_DIR) / f"{safe_title.replace(' ', '_').lower()}.md"
