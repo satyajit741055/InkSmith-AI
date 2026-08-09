@@ -33,7 +33,7 @@ export const NewBlogPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-12">
+      <div className="max-w-screen-2xl mx-auto px-6 lg:px-8 py-12">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -92,15 +92,15 @@ export const NewBlogPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4 }}
-              className="grid grid-cols-1 lg:grid-cols-5 gap-8"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-6"
             >
               {/* Sidebar */}
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-3">
                 <ProgressPanel threadId={threadId} onComplete={handleProgressComplete} />
               </div>
 
               {/* Main */}
-              <div className="lg:col-span-3">
+              <div className="lg:col-span-9">
                 <AnimatePresence mode="wait">
                   {/* Writing in progress */}
                   {!finalStatus && (
@@ -150,62 +150,72 @@ export const NewBlogPage: React.FC = () => {
                     </motion.div>
                   )}
 
-                  {/* Success */}
+                  {/* Success — inline PDF preview */}
                   {finalStatus && finalStatus.status === 'completed' && (
                     <motion.div
                       key="success"
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       style={cardStyle}
-                      className="p-12 sm:p-16 text-center"
+                      className="overflow-hidden flex flex-col"
                     >
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-                        className="w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-8"
-                        style={{
-                          background: 'rgba(16,185,129,0.12)',
-                          border: '1px solid rgba(16,185,129,0.25)',
-                        }}
+                      {/* Top bar */}
+                      <div
+                        className="flex items-center justify-between gap-4 px-6 py-4"
+                        style={{ borderBottom: '1px solid #2a2a40' }}
                       >
-                        <CheckCircle className="w-12 h-12" style={{ color: '#34d399' }} />
-                      </motion.div>
-
-                      <h3 className="text-3xl font-bold text-white mb-3">Your blog is ready!</h3>
-                      <p className="mb-10 max-w-md mx-auto" style={{ color: '#94a3b8' }}>
-                        Your AI-generated blog post has been created and exported successfully.
-                      </p>
-
-                      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        {finalStatus.pdf_url && (
-                          <a
-                            href={`http://localhost:8001${finalStatus.pdf_url}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold text-white transition-all duration-200 hover:-translate-y-0.5"
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="w-5 h-5" style={{ color: '#34d399' }} />
+                          <span className="text-sm font-semibold text-white">Your blog is ready!</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {finalStatus.pdf_url && (
+                            <a
+                              href={`http://localhost:8001${finalStatus.pdf_url}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5"
+                              style={{
+                                background: 'linear-gradient(135deg, #10b981, #0d9488)',
+                                boxShadow: '0 4px 15px rgba(16,185,129,0.3)',
+                              }}
+                            >
+                              <Download size={16} />
+                              Download
+                            </a>
+                          )}
+                          <button
+                            onClick={handleReset}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5"
                             style={{
-                              background: 'linear-gradient(135deg, #10b981, #0d9488)',
-                              boxShadow: '0 8px 25px rgba(16,185,129,0.3)',
+                              background: '#1e1e35',
+                              border: '1px solid #2a2a40',
+                              color: '#cbd5e1',
                             }}
                           >
-                            <Download size={20} />
-                            Download PDF
-                          </a>
-                        )}
-                        <button
-                          onClick={handleReset}
-                          className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold transition-all duration-200 hover:-translate-y-0.5"
-                          style={{
-                            background: '#1e1e35',
-                            border: '1px solid #2a2a40',
-                            color: '#cbd5e1',
-                          }}
-                        >
-                          <RotateCcw size={18} />
-                          Create Another
-                        </button>
+                            <RotateCcw size={14} />
+                            New Blog
+                          </button>
+                        </div>
                       </div>
+
+                      {/* PDF embed */}
+                      {finalStatus.pdf_url ? (
+                        <iframe
+                          src={`http://localhost:8001${finalStatus.pdf_url}`}
+                          title="Generated Blog PDF"
+                          style={{
+                            width: '100%',
+                            height: '85vh',
+                            border: 'none',
+                            background: '#1e1e35',
+                          }}
+                        />
+                      ) : (
+                        <div className="p-12 text-center" style={{ color: '#94a3b8' }}>
+                          PDF preview is not available.
+                        </div>
+                      )}
                     </motion.div>
                   )}
 

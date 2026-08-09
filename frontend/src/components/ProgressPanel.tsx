@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   Circle,
   Loader2,
-  Download,
   AlertCircle,
   Sparkles,
 } from 'lucide-react';
@@ -16,9 +15,13 @@ interface ProgressPanelProps {
 }
 
 const STAGES = [
+  { key: 'routing', label: 'Routing', desc: 'Analyzing prompt & deciding approach' },
+  { key: 'researching', label: 'Researching', desc: 'Searching the web for sources' },
   { key: 'planning', label: 'Planning', desc: 'Creating blog outline & structure' },
   { key: 'writing', label: 'Writing', desc: 'Generating content sections' },
-  { key: 'assembling', label: 'Assembling', desc: 'Combining & formatting output' },
+  { key: 'merging', label: 'Merging', desc: 'Combining all sections together' },
+  { key: 'image_planning', label: 'Image Planning', desc: 'Deciding image placements' },
+  { key: 'generating_images', label: 'Generating Images', desc: 'Creating AI images for the blog' },
   { key: 'completed', label: 'Completed', desc: 'Blog is ready for download' },
 ];
 
@@ -105,35 +108,35 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({ threadId, onComple
         }}
       />
 
-      <div style={{ padding: 28 }}>
+      <div style={{ padding: 18 }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
           <div
             style={{
-              width: 36, height: 36, borderRadius: 10,
+              width: 30, height: 30, borderRadius: 8,
               background: 'linear-gradient(135deg, #7c3aed, #3b82f6)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 4px 15px rgba(124,58,237,0.3)',
               flexShrink: 0,
             }}
           >
-            <Sparkles style={{ width: 16, height: 16, color: 'white' }} />
+            <Sparkles style={{ width: 14, height: 14, color: 'white' }} />
           </div>
           <div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: 'white', margin: 0 }}>Progress</h3>
-            <p style={{ fontSize: 12, color: '#64748b', margin: 0 }}>Real-time tracking</p>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'white', margin: 0 }}>Progress</h3>
+            <p style={{ fontSize: 11, color: '#64748b', margin: 0 }}>Real-time tracking</p>
           </div>
         </div>
 
         {/* Progress bar */}
-        <div style={{ marginBottom: 28 }}>
+        <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
             <span style={{ fontSize: 12, fontWeight: 500, color: '#94a3b8' }}>Overall Progress</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: '#a78bfa' }}>{Math.round(progressPercent)}%</span>
           </div>
           <div
             style={{
-              height: 8, borderRadius: 4,
+              height: 6, borderRadius: 3,
               background: '#1e1e35',
               overflow: 'hidden',
             }}
@@ -197,7 +200,7 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({ threadId, onComple
         )}
 
         {/* Stages */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {STAGES.map((stage, index) => {
             const isCompleted = index < currentStageIndex || status.status === 'completed';
             const isActive =
@@ -212,8 +215,8 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({ threadId, onComple
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
                 style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 14,
-                  padding: '12px 14px', borderRadius: 12,
+                  display: 'flex', alignItems: 'flex-start', gap: 10,
+                  padding: '8px 10px', borderRadius: 10,
                   background: isActive ? 'rgba(139,92,246,0.08)' : 'transparent',
                   border: isActive ? '1px solid rgba(139,92,246,0.15)' : '1px solid transparent',
                   transition: 'all 0.2s',
@@ -226,12 +229,12 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({ threadId, onComple
                       animate={{ scale: 1 }}
                       transition={{ type: 'spring', stiffness: 300 }}
                     >
-                      <CheckCircle2 style={{ width: 22, height: 22, color: '#34d399' }} />
+                      <CheckCircle2 style={{ width: 18, height: 18, color: '#34d399' }} />
                     </motion.div>
                   ) : isActive ? (
                     <div
                       style={{
-                        width: 22, height: 22, borderRadius: '50%',
+                        width: 18, height: 18, borderRadius: '50%',
                         background: 'rgba(139,92,246,0.15)',
                         border: '1px solid rgba(139,92,246,0.3)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -239,18 +242,18 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({ threadId, onComple
                     >
                       <Loader2
                         className="animate-spin"
-                        style={{ width: 13, height: 13, color: '#a78bfa' }}
+                        style={{ width: 11, height: 11, color: '#a78bfa' }}
                       />
                     </div>
                   ) : (
-                    <Circle style={{ width: 22, height: 22, color: '#334155' }} />
+                    <Circle style={{ width: 18, height: 18, color: '#334155' }} />
                   )}
                 </div>
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p
                     style={{
-                      fontSize: 14, fontWeight: 600, margin: 0,
+                      fontSize: 13, fontWeight: 600, margin: 0,
                       color: isCompleted ? '#34d399' : isActive ? '#c4b5fd' : '#475569',
                     }}
                   >
@@ -280,7 +283,7 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({ threadId, onComple
             >
               <div
                 style={{
-                  padding: 20, borderRadius: 14,
+                  padding: 16, borderRadius: 14,
                   background: 'rgba(16,185,129,0.08)',
                   border: '1px solid rgba(16,185,129,0.2)',
                 }}
@@ -290,34 +293,12 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({ threadId, onComple
                     fontSize: 14, fontWeight: 700,
                     color: '#34d399',
                     display: 'flex', alignItems: 'center', gap: 8,
-                    margin: '0 0 16px',
+                    margin: 0,
                   }}
                 >
                   <CheckCircle2 size={18} />
-                  Blog ready!
+                  Blog ready! View the PDF preview on the right.
                 </p>
-                {status.pdf_url && (
-                  <a
-                    href={`http://localhost:8001${status.pdf_url}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 8,
-                      background: 'linear-gradient(135deg, #10b981, #0d9488)',
-                      color: 'white',
-                      padding: '10px 20px', borderRadius: 10,
-                      fontWeight: 600, fontSize: 14,
-                      textDecoration: 'none',
-                      boxShadow: '0 4px 15px rgba(16,185,129,0.3)',
-                      transition: 'transform 0.2s',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
-                  >
-                    <Download size={16} />
-                    Download PDF
-                  </a>
-                )}
               </div>
             </motion.div>
           )}
