@@ -2,6 +2,7 @@ from app.agent.state import AgentState,GlobalImagePlan,ImageSpec
 from app.services.llm import llm_groq
 from app.agent.prompts import DECIDE_IMAGES_SYSTEM
 from langchain_core.messages import SystemMessage,HumanMessage
+from app.services.state_service import update_graph_progress
 
 def insert_placeholders(merged_md: str, images: list[ImageSpec]) -> str:
     md = merged_md
@@ -21,6 +22,10 @@ def insert_placeholders(merged_md: str, images: list[ImageSpec]) -> str:
 
 
 def decide_images(state: AgentState) -> dict:
+    thread_id = state.get('thread_id')
+    if thread_id:
+        update_graph_progress(thread_id, "image_planning", "Planning image placements...")
+
     planner = llm_groq.with_structured_output(GlobalImagePlan)
     merged_md = state["merged_md"]
     plan = state["plan"]

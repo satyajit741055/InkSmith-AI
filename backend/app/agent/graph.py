@@ -2,16 +2,41 @@ from langgraph.graph import StateGraph, START, END
 from app.agent.state import AgentState
 from app.agent.nodes.orchestrator import orchestrator
 from app.agent.nodes.writer import writer
-from app.agent.nodes.reducer import reducer
 from app.agent.nodes.router import router
 from app.agent.nodes.research import research
 from langgraph.types import Send
+from app.config import settings
 import json
 from pathlib import Path
-from langgraph.checkpoint.memory import MemorySaver
 from app.agent.sub_agent.sub_graph import sub_agent
+from psycopg_pool import ConnectionPool
+from langgraph.checkpoint.postgres import PostgresSaver
+from langgraph.types import RetryPolicy
 
-checkpointer = MemorySaver()
+
+_pool: ConnectionPool | None = None
+_check_pointer: PostgresSaver | None = None
+_compiled_graph = None   
+
+def get_checkpoint() ->PostgresSaver:
+    """Lazily created once per worker process, you can call it many times,
+    It will not create tables if they exists  
+    """
+    global _pool,_check_pointer
+   
+    if _check_pointer is None:
+        _pool = ConnectionPool(
+            conninfo = settings.CHECKPOINTER_DB_URI,
+            max_size=10,
+            kwargs={"autocommit": True, "prepare_threshold": 0},
+        )
+        _check_pointer = PostgresSaver(_pool)
+        _check_pointer.setup()
+    return _check_pointer
+    
+
+
+# checkpointer = MemorySaver()
 
 def fanout(state:AgentState):
     total_tasks = len(state["plan"].tasks)
@@ -38,11 +63,10 @@ def route_next(state: AgentState) -> str:
 
 
 graph = StateGraph(AgentState)
-graph.add_node("router",router)
-graph.add_node("research",research)
-graph.add_node("orchestrator", orchestrator)
-graph.add_node("writer", writer)
-graph.add_node("reducer", reducer)
+graph.add_node("router",router,retry_policy=RetryPolicy(max_attempts=3),)
+graph.add_node("research",research,retry_policy=RetryPolicy(max_attempts=3),)
+graph.add_node("orchestrator", orchestrator,retry_policy=RetryPolicy(max_attempts=3),)
+graph.add_node("writer", writer,retry_policy=RetryPolicy(max_attempts=3),)
 graph.add_node("sub_agent",sub_agent)
 
 
@@ -51,8 +75,14 @@ graph.add_conditional_edges("router", route_next, {"research": "research", "orch
 graph.add_edge("research", "orchestrator")
 graph.add_conditional_edges("orchestrator", fanout,["writer"])
 graph.add_edge("writer", "sub_agent")
+graph.add_edge("sub_agent", END)
 
-graph = graph.compile(checkpointer=checkpointer)
+def get_graph():
+    global _compiled_graph 
+    if _compiled_graph is None:
+        _compiled_graph = graph.compile(checkpointer=get_checkpoint())
+
+    return _compiled_graph
 
 
 

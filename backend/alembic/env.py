@@ -6,6 +6,20 @@ from app.models import Base
 from alembic import context
 from app.config import settings
 
+
+LANGGRAPH_CHECKPOINT_TABLES = {
+    "checkpoints",
+    "checkpoint_blobs",
+    "checkpoint_writes",
+    "checkpoint_migrations",
+}
+
+def include_object(object, name, type_, reflected, compare_to):
+    if type_ == "table" and name in LANGGRAPH_CHECKPOINT_TABLES:
+        return False
+    return True
+
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -68,7 +82,9 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection, 
+            target_metadata=target_metadata,
+            include_object=include_object,
         )
 
         with context.begin_transaction():

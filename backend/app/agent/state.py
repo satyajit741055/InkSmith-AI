@@ -15,7 +15,7 @@ class ImageSpec(BaseModel):
             "substring of the blog content provided."
         )
     )
-    filename: str = Field(..., description="Save under images/, e.g. qkv_flow.png")
+    filename: str = Field(..., description="Just the filename with extension, no directory prefix — e.g. qkv_flow.png",)
     alt: str
     caption: str
     prompt: str = Field(..., description="Prompt to send to the image model.")

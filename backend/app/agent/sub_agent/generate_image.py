@@ -1,13 +1,18 @@
 from app.agent.state import AgentState
-from pathlib import Path
+from pathlib import Path,PurePosixPath
 from app.services.generate_images import _generate_hf_image_bytes,_generate_openai_image_bytes
 from app.config import settings
 import re
 from datetime import datetime
 from app.services.mdToPDF import convert_to_pdf
+from app.services.state_service import update_graph_progress
 
 
 def generate_and_place_images(state: AgentState) -> dict:
+    thread_id = state.get('thread_id')
+    if thread_id:
+        update_graph_progress(thread_id, "generating_images", "Generating images with AI...")
+
     plan = state["plan"]
     assert plan is not None
 
@@ -25,7 +30,7 @@ def generate_and_place_images(state: AgentState) -> dict:
 
     for spec in image_specs:
         placeholder = spec["placeholder"]
-        filename = spec["filename"]
+        filename = PurePosixPath(spec["filename"]).name
         out_path = images_dir / filename
 
         # generate only if needed
@@ -63,5 +68,9 @@ def generate_and_place_images(state: AgentState) -> dict:
     state["pdf_path"] = pdf_path    
     state["final_content"] = md
     state["file_name"] = file_path.name
-    state["file_path"] = str(file_path) 
+    state["file_path"] = str(file_path)
+
+    if thread_id:
+        update_graph_progress(thread_id, "completed", "Blog generation complete!")
+
     return state

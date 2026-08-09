@@ -4,9 +4,14 @@ from app.services.llm import llm_groq
 from langchain_core.messages import SystemMessage,HumanMessage
 from app.agent.prompts import RESEARCH_SYSTEM
 from app.services.search_tool import _tavily_search
+from app.services.state_service import update_graph_progress
 
 
 def research(state: AgentState) -> dict:
+    thread_id = state.get('thread_id')
+    if thread_id:
+        update_graph_progress(thread_id, "researching", "Searching the web for sources...")
+
     queries = (state.get("queries") or [])[:10]
     raw: list[dict] = []
     for q in queries:

@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     POSTGRES_URL: str
     POSTGRES_URL_SYNC: str
     POSTGRES_ECHO: bool = True
+    CHECKPOINTER_DB_URI : str
 
     # Redis Configurations
     REDIS_URL: str

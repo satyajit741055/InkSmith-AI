@@ -60,3 +60,20 @@ async def get_blog_status(
         pdf_url=f"/blogs/{Path(entry.pdf_path).name}" if entry.pdf_path else None,
         error_message=entry.error_message if entry.status == "failed" else None,
     )
+
+
+@router.post("/{blog_id}/retry")
+async def retry_blog(
+        blog_id: str,
+        current_user: current_user,
+        db: Annotated[AsyncSession, Depends(get_db)],
+):
+    result = await db.execute(select(BlogGeneration).where(BlogGeneration.thread_id == blog_id))
+    entry = result.scalar_one_or_none()
+    if not entry or entry.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Not found")
+    if entry.status != "failed":
+        raise HTTPException(status_code=400, detail="Only failed generations can be retried")
+
+    generate_blog_task.delay(blog_id, is_retry=True)
+    return {"thread_id": blog_id, "status": "retrying"}
