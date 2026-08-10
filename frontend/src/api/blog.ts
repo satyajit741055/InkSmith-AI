@@ -22,4 +22,10 @@ export const blogAPI = {
 
   getBlogStatus: (threadId: string) =>
     client.get<BlogStatusResponse>(`/blog/${threadId}`),
+
+  listBlogs: () =>
+    client.get<BlogStatusResponse[]>('/blog/list'),
+
+  downloadPdf: (threadId: string) =>
+    client.get(`/blog/${threadId}/pdf`, { responseType: 'blob' }),
 };

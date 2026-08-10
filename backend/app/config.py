@@ -41,4 +41,8 @@ class Settings(BaseSettings):
     TAVILY_API_KEY : str 
 
 
+    # Storage Backend
+    BACKEND: str = "local"
+
+
 settings = Settings()

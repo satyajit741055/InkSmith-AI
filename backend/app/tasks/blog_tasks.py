@@ -2,6 +2,7 @@ from app.celery_app import celery_app
 from app.database import sync_get_db
 from app.models import BlogGeneration
 from app.agent.graph import get_graph
+from app.services import storage
 
 
 def run_blog_generation(thread_id: str,
@@ -47,7 +48,7 @@ def generate_blog_task(self, thread_id: str,is_retry: bool = False):
         
         blog.status = "completed"
         blog.content = final_content
-        blog.pdf_path = pdf_path
+        blog.pdf_path = storage.save(pdf_path)
         db.commit()
         
     except Exception as e:

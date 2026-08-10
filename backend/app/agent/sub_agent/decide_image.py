@@ -3,16 +3,43 @@ from app.services.llm import llm_groq
 from app.agent.prompts import DECIDE_IMAGES_SYSTEM
 from langchain_core.messages import SystemMessage,HumanMessage
 from app.services.state_service import update_graph_progress
+import difflib
+
+_FUZZY_THRESHOLD = 0.75
+
+def _fuzzy_find(md: str, anchor: str) -> int:
+    """Return the start index of the best fuzzy match for anchor in md, or -1."""
+    words = anchor.split()
+    window = len(words)
+    md_words = md.split()
+    best_ratio = 0.0
+    best_char_idx = -1
+
+    for i in range(len(md_words) - window + 1):
+        candidate = " ".join(md_words[i : i + window])
+        ratio = difflib.SequenceMatcher(None, anchor, candidate).ratio()
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best_char_idx = md.find(candidate)
+
+    if best_ratio >= _FUZZY_THRESHOLD:
+        print(f"insert_placeholders: fuzzy matched anchor (ratio={best_ratio:.2f}): {anchor!r}")
+        return best_char_idx
+    return -1
+
 
 def insert_placeholders(merged_md: str, images: list[ImageSpec]) -> str:
     md = merged_md
     for img in images:
         idx = md.find(img.anchor_text)
+
         if idx == -1:
-            raise ValueError(
-                f"decide_images: anchor text not found for {img.placeholder}: "
-                f"{img.anchor_text!r}"
-            )
+            idx = _fuzzy_find(md, img.anchor_text)
+
+        if idx == -1:
+            print(f"insert_placeholders: skipping {img.placeholder} — anchor not found: {img.anchor_text!r}")
+            continue
+
         insert_at = idx + len(img.anchor_text)
         # find the next paragraph break after the anchor sentence
         next_break = md.find("\n\n", insert_at)

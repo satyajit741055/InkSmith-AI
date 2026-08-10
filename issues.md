@@ -9,6 +9,11 @@ Solution :
     3. I may prefer AsynPostgressSaver when graph itself does concurrent asyncIo which helps multiple parallel LLM calls,Parallel Image Generation also we are invoking graph with invoke not ainvoke 
     4.
 
+Issue: decide_images: anchor text not found for [[IMAGE_2]]: 'This code snippet demonstrates a simple example of a smart contract written in Solidity.'  Failing and Crashing whole generation 
+Solution : Fuzzy match (difflib, threshold=0.75) first, then silently skip image if still not found. No crash.
+
+Issue: Storage_logic seems little bit hard 
+
 
 
 

@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { blogAPI, BlogStatusResponse } from '../api/blog';
 import {
   FileText,
   CheckCircle,
@@ -9,6 +11,9 @@ import {
   Clock,
   Sparkles,
   ArrowRight,
+  Eye,
+  Loader2,
+  X,
 } from 'lucide-react';
 
 const fadeUp = {
@@ -21,24 +26,64 @@ const fadeUp = {
 };
 
 export const DashboardPage: React.FC = () => {
+  const [blogs, setBlogs] = useState<BlogStatusResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  const openPdf = async (threadId: string) => {
+    setPdfLoading(true);
+    try {
+      const response = await blogAPI.downloadPdf(threadId);
+      const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      setPdfUrl(url);
+    } catch (err) {
+      console.error('Failed to load PDF:', err);
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  const closePdf = () => {
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
+  };
+
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        const response = await blogAPI.listBlogs();
+        setBlogs(response.data);
+      } catch (error) {
+        console.error('Failed to fetch blogs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBlogs();
+  }, []);
+
+  const totalBlogs = blogs.length;
+  const completedBlogs = blogs.filter((b) => b.status === 'completed').length;
+
   const stats = [
     {
       label: 'Total Blogs',
-      value: '0',
+      value: String(totalBlogs),
       icon: <FileText size={20} className="text-white" />,
       bg: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
       shadow: '0 8px 25px rgba(139, 92, 246, 0.25)',
     },
     {
       label: 'Completed',
-      value: '0',
+      value: String(completedBlogs),
       icon: <CheckCircle size={20} className="text-white" />,
       bg: 'linear-gradient(135deg, #10b981, #0d9488)',
       shadow: '0 8px 25px rgba(16, 185, 129, 0.25)',
     },
     {
       label: 'Downloads',
-      value: '0',
+      value: '--',
       icon: <Download size={20} className="text-white" />,
       bg: 'linear-gradient(135deg, #3b82f6, #0891b2)',
       shadow: '0 8px 25px rgba(59, 130, 246, 0.25)',
@@ -131,56 +176,154 @@ export const DashboardPage: React.FC = () => {
             <h2 className="text-xl font-semibold text-white">Recent Blogs</h2>
           </div>
 
-          {/* Empty State */}
-          <div
-            className="card-glass p-16 text-center relative overflow-hidden"
-            style={{ borderRadius: 24 }}
-          >
-            {/* Decorative bg */}
+          {loading ? (
+            <div className="card-glass p-16 text-center" style={{ borderRadius: 24 }}>
+              <Loader2 className="w-8 h-8 animate-spin mx-auto" style={{ color: '#a78bfa' }} />
+              <p className="mt-4" style={{ color: '#94a3b8' }}>Loading blogs...</p>
+            </div>
+          ) : blogs.length === 0 ? (
             <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: 'linear-gradient(135deg, rgba(124,58,237,0.04), transparent, rgba(59,130,246,0.04))',
-              }}
-            />
-
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.5, type: 'spring', stiffness: 150 }}
-              className="relative z-10"
+              className="card-glass p-16 text-center relative overflow-hidden"
+              style={{ borderRadius: 24 }}
             >
               <div
-                className="w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-8"
+                className="absolute inset-0 pointer-events-none"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(59,130,246,0.15))',
-                  border: '1px solid rgba(139, 92, 246, 0.1)',
+                  background: 'linear-gradient(135deg, rgba(124,58,237,0.04), transparent, rgba(59,130,246,0.04))',
                 }}
-              >
-                <Sparkles className="w-12 h-12" style={{ color: '#a78bfa' }} />
-              </div>
+              />
 
-              <h3 className="text-2xl font-bold text-white mb-3">No blogs yet</h3>
-              <p className="mb-10 max-w-md mx-auto leading-relaxed" style={{ color: '#94a3b8' }}>
-                Create your first AI-powered blog post. Describe your topic and let InkSmith
-                handle the rest. It takes less than 2 minutes.
-              </p>
-
-              <Link
-                to="/new"
-                className="btn-glow group inline-flex items-center gap-3 text-white px-8 py-4 rounded-xl font-semibold"
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.5, type: 'spring', stiffness: 150 }}
+                className="relative z-10"
               >
-                <PlusCircle size={20} />
-                Create Your First Blog
-                <ArrowRight
-                  size={18}
-                  className="group-hover:translate-x-1 transition-transform"
-                />
-              </Link>
-            </motion.div>
-          </div>
+                <div
+                  className="w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-8"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(59,130,246,0.15))',
+                    border: '1px solid rgba(139, 92, 246, 0.1)',
+                  }}
+                >
+                  <Sparkles className="w-12 h-12" style={{ color: '#a78bfa' }} />
+                </div>
+
+                <h3 className="text-2xl font-bold text-white mb-3">No blogs yet</h3>
+                <p className="mb-10 max-w-md mx-auto leading-relaxed" style={{ color: '#94a3b8' }}>
+                  Create your first AI-powered blog post. Describe your topic and let InkSmith
+                  handle the rest. It takes less than 2 minutes.
+                </p>
+
+                <Link
+                  to="/new"
+                  className="btn-glow group inline-flex items-center gap-3 text-white px-8 py-4 rounded-xl font-semibold"
+                >
+                  <PlusCircle size={20} />
+                  Create Your First Blog
+                  <ArrowRight
+                    size={18}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </Link>
+              </motion.div>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {blogs.map((blog, i) => (
+                <motion.div
+                  key={blog.thread_id}
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="visible"
+                  custom={i}
+                  className="card-glass p-5 flex items-center justify-between group hover:-translate-y-0.5 transition-transform"
+                  style={{ borderRadius: 16 }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(59,130,246,0.15))',
+                      }}
+                    >
+                      <FileText size={18} style={{ color: '#a78bfa' }} />
+                    </div>
+                    <div>
+                      <p className="text-white font-medium truncate max-w-xs">
+                        {blog.thread_id}
+                      </p>
+                      <p className="text-sm" style={{ color: '#64748b' }}>
+                        {blog.current_step || blog.status}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="px-3 py-1 rounded-full text-xs font-medium"
+                      style={{
+                        background: blog.status === 'completed' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                        color: blog.status === 'completed' ? '#34d399' : '#fbbf24',
+                      }}
+                    >
+                      {blog.status}
+                    </span>
+                    {blog.status === 'completed' && (
+                      <button
+                        onClick={() => openPdf(blog.thread_id)}
+                        className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+                        title="View PDF"
+                      >
+                        <Eye size={18} style={{ color: '#94a3b8' }} />
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </motion.div>
       </div>
+
+      {/* PDF Modal */}
+      {(pdfUrl || pdfLoading) && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+          onClick={closePdf}
+        >
+          <div
+            className="relative w-full max-w-5xl rounded-2xl overflow-hidden"
+            style={{ height: '88vh', background: '#0f172a', border: '1px solid rgba(139,92,246,0.2)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="flex items-center justify-between px-5 py-3"
+              style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <p className="text-white font-semibold text-sm">Blog PDF</p>
+              <button
+                onClick={closePdf}
+                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <X size={18} style={{ color: '#94a3b8' }} />
+              </button>
+            </div>
+            {pdfLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#a78bfa' }} />
+              </div>
+            ) : (
+              <iframe
+                src={pdfUrl!}
+                className="w-full"
+                style={{ height: 'calc(88vh - 52px)', border: 'none' }}
+                title="Blog PDF"
+              />
+            )}
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

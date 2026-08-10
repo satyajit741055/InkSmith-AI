@@ -2,7 +2,8 @@ from contextlib import asynccontextmanager
 from app.database import engine, Base
 from app.routers.auth import router as auth_router
 from app.routers.blog import router as blog_router
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
@@ -26,13 +27,27 @@ app = FastAPI(lifespan=lifespan)
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000","http://localhost:8001"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    origin = request.headers.get("origin", "")
+    allowed = ["http://localhost:5173", "http://localhost:3000", "http://localhost:8001"]
+    headers = {}
+    if origin in allowed:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)},
+        headers=headers,
+    )
+
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(blog_router, prefix="/api/v1/blog", tags=["blog"])
 
-app.mount("/blogs", StaticFiles(directory=settings.OUTPUT_DIR), name="blogs")
+# app.mount("/blogs", StaticFiles(directory=settings.OUTPUT_DIR), name="blogs")
