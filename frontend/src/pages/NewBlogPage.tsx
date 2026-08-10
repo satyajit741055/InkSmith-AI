@@ -49,21 +49,23 @@ export const NewBlogPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="max-w-screen-2xl mx-auto px-6 lg:px-8 py-12">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-10 text-center"
-        >
-          <h1 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">
-            Create New Blog
-          </h1>
-          <p className="mt-3 text-lg" style={{ color: '#94a3b8' }}>
-            Describe your topic and let AI do the heavy lifting.
-          </p>
-        </motion.div>
+      <div className={`max-w-screen-2xl mx-auto px-6 lg:px-8 ${threadId ? 'py-4' : 'py-12'}`}>
+        {/* Header — only shown on form view */}
+        {!threadId && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-10 text-center"
+          >
+            <h1 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">
+              Create New Blog
+            </h1>
+            <p className="mt-3 text-lg" style={{ color: '#94a3b8' }}>
+              Describe your topic and let AI do the heavy lifting.
+            </p>
+          </motion.div>
+        )}
 
         <AnimatePresence mode="wait">
           {!threadId ? (
@@ -108,15 +110,15 @@ export const NewBlogPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4 }}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-6"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-auto lg:h-[calc(100vh-88px)] items-stretch"
             >
               {/* Sidebar */}
-              <div className="lg:col-span-3">
+              <div className="lg:col-span-3 h-full">
                 <ProgressPanel threadId={threadId} onComplete={handleProgressComplete} />
               </div>
 
               {/* Main */}
-              <div className="lg:col-span-9">
+              <div className="lg:col-span-9 h-full">
                 <AnimatePresence mode="wait">
                   {/* Writing in progress */}
                   {!finalStatus && (
@@ -126,7 +128,7 @@ export const NewBlogPage: React.FC = () => {
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.98 }}
                       style={cardStyle}
-                      className="p-12 sm:p-16 text-center"
+                      className="p-12 sm:p-16 text-center h-full"
                     >
                       <div
                         className="w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-8 relative"
@@ -173,7 +175,7 @@ export const NewBlogPage: React.FC = () => {
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       style={cardStyle}
-                      className="overflow-hidden flex flex-col"
+                      className="overflow-hidden flex flex-col h-full"
                     >
                       {/* Top bar */}
                       <div
@@ -216,26 +218,27 @@ export const NewBlogPage: React.FC = () => {
                       </div>
 
                       {/* PDF embed */}
-                      {pdfLoading ? (
-                        <div className="flex items-center justify-center" style={{ height: '85vh' }}>
-                          <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#a78bfa' }} />
-                        </div>
-                      ) : pdfBlobUrl ? (
-                        <iframe
-                          src={pdfBlobUrl}
-                          title="Generated Blog PDF"
-                          style={{
-                            width: '100%',
-                            height: '85vh',
-                            border: 'none',
-                            background: '#1e1e35',
-                          }}
-                        />
-                      ) : (
-                        <div className="p-12 text-center" style={{ color: '#94a3b8' }}>
-                          PDF preview is not available.
-                        </div>
-                      )}
+                      <div className="flex-1 min-h-0 relative">
+                        {pdfLoading ? (
+                          <div className="flex items-center justify-center h-full">
+                            <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#a78bfa' }} />
+                          </div>
+                        ) : pdfBlobUrl ? (
+                          <iframe
+                            src={pdfBlobUrl}
+                            title="Generated Blog PDF"
+                            className="w-full h-full"
+                            style={{
+                              border: 'none',
+                              background: '#1e1e35',
+                            }}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full p-12 text-center" style={{ color: '#94a3b8' }}>
+                            PDF preview is not available.
+                          </div>
+                        )}
+                      </div>
                     </motion.div>
                   )}
 
@@ -249,30 +252,32 @@ export const NewBlogPage: React.FC = () => {
                         ...cardStyle,
                         borderColor: 'rgba(239,68,68,0.15)',
                       }}
-                      className="p-12 sm:p-16 text-center"
+                      className="p-12 sm:p-16 text-center h-full"
                     >
-                      <div
-                        className="w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-8"
-                        style={{
-                          background: 'rgba(239,68,68,0.12)',
-                          border: '1px solid rgba(239,68,68,0.25)',
-                        }}
-                      >
-                        <AlertTriangle className="w-12 h-12" style={{ color: '#f87171' }} />
+                      <div className="h-full flex flex-col items-center justify-center">
+                        <div
+                          className="w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-8"
+                          style={{
+                            background: 'rgba(239,68,68,0.12)',
+                            border: '1px solid rgba(239,68,68,0.25)',
+                          }}
+                        >
+                          <AlertTriangle className="w-12 h-12" style={{ color: '#f87171' }} />
+                        </div>
+
+                        <h3 className="text-2xl font-bold text-white mb-3">Generation Failed</h3>
+                        <p className="mb-10 max-w-md mx-auto" style={{ color: 'rgba(248,113,113,0.8)' }}>
+                          {finalStatus.error_message || 'An unexpected error occurred'}
+                        </p>
+
+                        <button
+                          onClick={handleReset}
+                          className="btn-glow inline-flex items-center justify-center gap-2 text-white px-8 py-4 rounded-xl font-semibold"
+                        >
+                          <RotateCcw size={18} />
+                          Try Again
+                        </button>
                       </div>
-
-                      <h3 className="text-2xl font-bold text-white mb-3">Generation Failed</h3>
-                      <p className="mb-10 max-w-md mx-auto" style={{ color: 'rgba(248,113,113,0.8)' }}>
-                        {finalStatus.error_message || 'An unexpected error occurred'}
-                      </p>
-
-                      <button
-                        onClick={handleReset}
-                        className="btn-glow inline-flex items-center justify-center gap-2 text-white px-8 py-4 rounded-xl font-semibold"
-                      >
-                        <RotateCcw size={18} />
-                        Try Again
-                      </button>
                     </motion.div>
                   )}
                 </AnimatePresence>

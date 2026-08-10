@@ -96,6 +96,9 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({ threadId, onComple
         background: '#161625',
         border: '1px solid #2a2a40',
         borderRadius: 20,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         overflow: 'hidden',
         boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
       }}
@@ -108,7 +111,15 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({ threadId, onComple
         }}
       />
 
-      <div style={{ padding: 18 }}>
+      <div
+        style={{
+          padding: 18,
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          overflow: 'hidden',
+        }}
+      >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
           <div
@@ -200,8 +211,9 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({ threadId, onComple
         )}
 
         {/* Stages */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {STAGES.map((stage, index) => {
+        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, marginTop: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {STAGES.map((stage, index) => {
             const isCompleted = index < currentStageIndex || status.status === 'completed';
             const isActive =
               index === currentStageIndex &&
@@ -270,8 +282,8 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({ threadId, onComple
                 </div>
               </motion.div>
             );
-          })}
-        </div>
+            })}
+          </div>
 
         {/* Completed */}
         <AnimatePresence>
@@ -303,6 +315,7 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({ threadId, onComple
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </div>
     </div>
   );
