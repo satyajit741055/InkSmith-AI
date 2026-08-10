@@ -2,26 +2,42 @@ import { useState } from 'react';
 import { Layout } from '../components/Layout';
 import { BlogForm } from '../components/BlogForm';
 import { ProgressPanel } from '../components/ProgressPanel';
-import { BlogStatusResponse } from '../api/blog';
+import { blogAPI, BlogStatusResponse } from '../api/blog';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, RotateCcw, CheckCircle, AlertTriangle, Sparkles } from 'lucide-react';
+import { Download, RotateCcw, CheckCircle, AlertTriangle, Sparkles, Loader2 } from 'lucide-react';
 
 export const NewBlogPage: React.FC = () => {
   const [threadId, setThreadId] = useState<string | null>(null);
   const [finalStatus, setFinalStatus] = useState<BlogStatusResponse | null>(null);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const handleFormSubmit = (id: string) => {
     setThreadId(id);
     setFinalStatus(null);
+    if (pdfBlobUrl) { URL.revokeObjectURL(pdfBlobUrl); setPdfBlobUrl(null); }
   };
 
-  const handleProgressComplete = (status: BlogStatusResponse) => {
+  const handleProgressComplete = async (status: BlogStatusResponse) => {
     setFinalStatus(status);
+    if (status.status === 'completed' && status.thread_id) {
+      setPdfLoading(true);
+      try {
+        const response = await blogAPI.downloadPdf(status.thread_id);
+        const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+        setPdfBlobUrl(url);
+      } catch (err) {
+        console.error('Failed to fetch PDF:', err);
+      } finally {
+        setPdfLoading(false);
+      }
+    }
   };
 
   const handleReset = () => {
     setThreadId(null);
     setFinalStatus(null);
+    if (pdfBlobUrl) { URL.revokeObjectURL(pdfBlobUrl); setPdfBlobUrl(null); }
   };
 
   const cardStyle: React.CSSProperties = {
@@ -200,9 +216,13 @@ export const NewBlogPage: React.FC = () => {
                       </div>
 
                       {/* PDF embed */}
-                      {finalStatus.pdf_url ? (
+                      {pdfLoading ? (
+                        <div className="flex items-center justify-center" style={{ height: '85vh' }}>
+                          <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#a78bfa' }} />
+                        </div>
+                      ) : pdfBlobUrl ? (
                         <iframe
-                          src={`http://localhost:8001${finalStatus.pdf_url}`}
+                          src={pdfBlobUrl}
                           title="Generated Blog PDF"
                           style={{
                             width: '100%',

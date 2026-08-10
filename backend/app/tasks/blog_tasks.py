@@ -2,7 +2,7 @@ from app.celery_app import celery_app
 from app.database import sync_get_db
 from app.models import BlogGeneration
 from app.agent.graph import get_graph
-from app.services import storage
+from app.services.storage import storage
 
 
 def run_blog_generation(thread_id: str,

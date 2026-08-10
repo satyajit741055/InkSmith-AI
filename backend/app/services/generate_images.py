@@ -5,7 +5,7 @@ from openai import OpenAI
 import base64
 
 
-def _generate_hf_image_bytes(prompt: str) -> bytes:
+def _generate_hf_image_bytes(prompt: str,quality:str,size:str) -> bytes:
     client = InferenceClient(
                     api_key=settings.HF_API_KEY
                 )

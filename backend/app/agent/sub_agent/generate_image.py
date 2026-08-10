@@ -32,7 +32,7 @@ def generate_and_place_images(state: AgentState) -> dict:
             # generate only if needed
             if not out_path.exists():
                 try:
-                    img_bytes = _generate_openai_image_bytes(prompt=spec["prompt"],quality=spec["quality"],size=spec["size"])
+                    img_bytes = _generate_hf_image_bytes(prompt=spec["prompt"],quality=spec["quality"],size=spec["size"])
                     out_path.write_bytes(img_bytes)
                 except Exception as e:
                     # graceful fallback: keep doc usable
