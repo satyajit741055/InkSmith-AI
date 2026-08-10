@@ -14,6 +14,7 @@ import {
   Eye,
   Loader2,
   X,
+  AlertTriangle,
 } from 'lucide-react';
 
 const fadeUp = {
@@ -30,14 +31,21 @@ export const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   const openPdf = async (threadId: string) => {
     setPdfLoading(true);
+    setPdfError(null);
     try {
       const response = await blogAPI.downloadPdf(threadId);
       const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
       setPdfUrl(url);
-    } catch (err) {
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const message = status === 404
+        ? 'PDF not found. The file may have been deleted or generation failed.'
+        : 'Failed to load PDF. Please try again.';
+      setPdfError(message);
       console.error('Failed to load PDF:', err);
     } finally {
       setPdfLoading(false);
@@ -47,6 +55,7 @@ export const DashboardPage: React.FC = () => {
   const closePdf = () => {
     if (pdfUrl) URL.revokeObjectURL(pdfUrl);
     setPdfUrl(null);
+    setPdfError(null);
   };
 
   useEffect(() => {
@@ -251,7 +260,7 @@ export const DashboardPage: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-white font-medium truncate max-w-xs">
-                        {blog.thread_id}
+                        {blog.file_name || blog.thread_id}
                       </p>
                       <p className="text-sm" style={{ color: '#64748b' }}>
                         {blog.current_step || blog.status}
@@ -286,7 +295,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* PDF Modal */}
-      {(pdfUrl || pdfLoading) && (
+      {(pdfUrl || pdfLoading || pdfError) && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
@@ -312,6 +321,14 @@ export const DashboardPage: React.FC = () => {
             {pdfLoading ? (
               <div className="flex items-center justify-center h-full">
                 <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#a78bfa' }} />
+              </div>
+            ) : pdfError ? (
+              <div className="flex flex-col items-center justify-center h-full px-6 text-center">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  <AlertTriangle size={28} style={{ color: '#f87171' }} />
+                </div>
+                <p className="text-white font-semibold mb-2">Unable to load PDF</p>
+                <p style={{ color: '#94a3b8' }}>{pdfError}</p>
               </div>
             ) : (
               <iframe

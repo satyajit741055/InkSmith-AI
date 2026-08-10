@@ -42,6 +42,7 @@ class BlogGenerationResponse(BaseModel):
     current_step: str | None = None
     pdf_url: str | None = None
     error_message: str | None = None
+    file_name : str | None = None
     
     model_config = ConfigDict(from_attributes=True)
 
