@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     POSTGRES_URL: str
     POSTGRES_URL_SYNC: str
-    POSTGRES_ECHO: bool = True
+    POSTGRES_ECHO: bool = False
     CHECKPOINTER_DB_URI : str
 
     # Redis Configurations
@@ -43,6 +43,8 @@ class Settings(BaseSettings):
 
     # Storage Backend
     BACKEND: str = "local"
+    # Envrionement
+    ENVIRONMENT: str = "local" 
 
 
 settings = Settings()

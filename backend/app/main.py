@@ -46,11 +46,19 @@ async def global_exception_handler(request: Request, exc: Exception):
     if origin in allowed:
         headers["Access-Control-Allow-Origin"] = origin
         headers["Access-Control-Allow-Credentials"] = "true"
+    
+    if settings.ENVIRONMENT == "local":
+        return JSONResponse(
+            status_code=500,
+            content={"detail": str(exc)},
+            headers=headers,
+        )
     return JSONResponse(
-        status_code=500,
-        content={"detail": str(exc)},
-        headers=headers,
-    )
+            status_code=500,
+            content={"detail": "Some Error , Retry"},
+            headers=headers,
+        )
+    
 
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(blog_router, prefix="/api/v1/blog", tags=["blog"])

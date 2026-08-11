@@ -8,7 +8,7 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password : str
+    password: str = Field(..., min_length=8, max_length=64)
 
 class UserLogin(BaseModel):
     email : EmailStr
@@ -26,8 +26,7 @@ class Token(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class UserPrompt(BaseModel):
-    prompt : str
-    
+    prompt: str = Field(..., min_length=5, max_length=200, description="Prompt length")    
     model_config = ConfigDict(from_attributes=True)
 
 

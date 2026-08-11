@@ -4,13 +4,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from typing import Annotated
 from app.models import User
-from fastapi import HTTPException
+from fastapi import HTTPException,Request
 from app.services.auth_service  import current_user, hash_password, verify_password, create_access_token
 from app.config import settings
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import func,select
-
+from app.limiter import limiter
 
 router = APIRouter()
 
@@ -20,7 +20,8 @@ router = APIRouter()
     response_model = UserResponse,
     status_code = status.HTTP_201_CREATED
     )
-async def sign_up(user: UserCreate, db : Annotated[AsyncSession, Depends(get_db)]):
+@limiter.limit("5/minute")
+async def sign_up(user: UserCreate, db : Annotated[AsyncSession, Depends(get_db)],request: Request):
     result = await db.execute(
         select(User).where(User.email == user.email)
     )
@@ -95,9 +96,11 @@ async def login_for_access_token(
     response_model = Token,
     status_code = status.HTTP_200_OK
     )
+@limiter.limit("5/minute")
 async def sign_in(
     credentials: UserLogin,
     db: Annotated[AsyncSession, Depends(get_db)],
+    request: Request
 ):
     result = await db.execute(
         select(User).where(
