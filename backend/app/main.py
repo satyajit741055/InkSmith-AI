@@ -2,12 +2,14 @@ from contextlib import asynccontextmanager
 from app.database import engine, Base
 from app.routers.auth import router as auth_router
 from app.routers.blog import router as blog_router
+from app.limiter import limiter,rate_limiter_storage
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 from app.config import settings
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
 
 Path(settings.OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 
@@ -23,6 +25,9 @@ async def lifespan(_app: FastAPI):
     print("Application shutting down...")
 
 app = FastAPI(lifespan=lifespan)
+app.state.limiter = limiter
+app.state.rate_limiter_storage = rate_limiter_storage
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Add CORS middleware
 app.add_middleware(
@@ -50,4 +55,3 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(blog_router, prefix="/api/v1/blog", tags=["blog"])
 
-# app.mount("/blogs", StaticFiles(directory=settings.OUTPUT_DIR), name="blogs")

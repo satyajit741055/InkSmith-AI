@@ -11,10 +11,10 @@ from app.schemas import UserPrompt, BlogGenerationId, BlogGenerationResponse
 from app.agent.graph import graph
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from fastapi import HTTPException
+from fastapi import HTTPException,Request
 from pathlib import Path
 from fastapi.responses import FileResponse,RedirectResponse
-
+from app.limiter import limiter
 
 router = APIRouter()
 
@@ -22,10 +22,12 @@ router = APIRouter()
     "/",
     response_model=BlogGenerationId
 )
+@limiter.limit("2/minute")
 async def generate_blog(
     prompt:UserPrompt,
     current_user:current_user,
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
+    request:Request
 ):
     prompt_text = prompt.prompt
     user_id = current_user.id
