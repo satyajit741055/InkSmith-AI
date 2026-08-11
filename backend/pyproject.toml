@@ -32,6 +32,7 @@ dependencies = [
     "langgraph-checkpoint-postgres>=3.1.2",
     "psycopg[binary]>=3.3.4",
     "slowapi>=0.1.10",
+    "langchain-deepseek>=1.1.0",
 ]
 
 [dependency-groups]

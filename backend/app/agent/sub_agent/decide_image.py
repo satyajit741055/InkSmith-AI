@@ -1,9 +1,11 @@
 from app.agent.state import AgentState,GlobalImagePlan,ImageSpec
-from app.services.llm import llm_groq
+from app.services.llm import get_llm
 from app.agent.prompts import DECIDE_IMAGES_SYSTEM
 from langchain_core.messages import SystemMessage,HumanMessage
 from app.services.state_service import update_graph_progress
 import difflib
+
+llm = get_llm()
 
 _FUZZY_THRESHOLD = 0.75
 
@@ -53,7 +55,7 @@ def decide_images(state: AgentState) -> dict:
     if thread_id:
         update_graph_progress(thread_id, "image_planning", "Planning image placements...")
 
-    planner = llm_groq.with_structured_output(GlobalImagePlan)
+    planner = llm.with_structured_output(GlobalImagePlan)
     merged_md = state["merged_md"]
     plan = state["plan"]
     assert plan is not None

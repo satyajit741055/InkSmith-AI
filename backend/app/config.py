@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str
     GROQ_API_KEY: str
     HF_API_KEY: str
+    DEEPSEEK_API_KEY:str
 
     # Output Directory 
     OUTPUT_DIR: str = "blogs"

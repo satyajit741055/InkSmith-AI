@@ -1,9 +1,9 @@
 from app.agent.state import  Plan, Task,EvidenceItem
-from app.services.llm import llm_groq
+from app.services.llm import get_llm
 from app.agent.prompts import WRITER_PROMPT
 from langchain_core.messages import SystemMessage, HumanMessage
 from app.services.state_service import update_graph_progress
-
+llm = get_llm()
 
 def writer(payload:dict)->dict:
     task = Task(**payload["task"])
@@ -43,7 +43,7 @@ Requires code: {task.requires_code}
 Bullets:
 {bullets_text}"""
 
-    section_content = llm_groq.invoke(
+    section_content = llm.invoke(
         [
             SystemMessage(content=WRITER_PROMPT),
             HumanMessage(

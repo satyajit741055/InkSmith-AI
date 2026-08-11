@@ -33,6 +33,62 @@ services:
       timeout: 5s
       retries: 5
 
+  backend:
+    build:
+      context: ./backend
+    container_name: InkSmith_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Override the host-local values from .env so the backend talks to
+      # the other containers over the compose network instead of localhost.
+      POSTGRES_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-blog_db}
+      POSTGRES_URL_SYNC: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-blog_db}
+      CHECKPOINTER_DB_URI: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-blog_db}
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8001:8001"
+    volumes:
+      - backend_blogs:/app/blogs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-worker:
+    build:
+      context: ./backend
+    container_name: InkSmith_celery_worker
+    restart: unless-stopped
+    command: ["celery", "-A", "app.celery_app", "worker", "--loglevel=info"]
+    env_file:
+      - .env
+    environment:
+      POSTGRES_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-blog_db}
+      POSTGRES_URL_SYNC: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-blog_db}
+      CHECKPOINTER_DB_URI: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-blog_db}
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - backend_blogs:/app/blogs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: InkSmith_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
   redis_data:
+  backend_blogs:
