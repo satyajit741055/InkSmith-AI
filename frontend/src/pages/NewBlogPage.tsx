@@ -6,6 +6,8 @@ import { blogAPI, BlogStatusResponse } from '../api/blog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, RotateCcw, CheckCircle, AlertTriangle, Sparkles, Loader2 } from 'lucide-react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001';
+
 export const NewBlogPage: React.FC = () => {
   const [threadId, setThreadId] = useState<string | null>(null);
   const [finalStatus, setFinalStatus] = useState<BlogStatusResponse | null>(null);
@@ -189,7 +191,7 @@ export const NewBlogPage: React.FC = () => {
                         <div className="flex items-center gap-3">
                           {finalStatus.pdf_url && (
                             <a
-                              href={`http://localhost:8001${finalStatus.pdf_url}`}
+                              href={`${API_BASE_URL}${finalStatus.pdf_url}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5"

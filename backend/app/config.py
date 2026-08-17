@@ -48,6 +48,18 @@ class Settings(BaseSettings):
     # Environment
     ENVIRONMENT: str = "local"
 
+    # CORS Configuration
+    CORS_ORIGINS: str = Field(
+        default="http://localhost:5173,http://localhost:3000,http://localhost:8001",
+        description="Comma-separated list of allowed CORS origins"
+    )
+
+    # API Configuration (for frontend)
+    API_BASE_URL: str = Field(
+        default="http://localhost:8001/api/v1",
+        description="Backend API base URL (used by frontend)"
+    )
+
     # Validators
     @field_validator('OPENAI_API_KEY', 'GROQ_API_KEY', 'HF_API_KEY', 'DEEPSEEK_API_KEY', 'TAVILY_API_KEY')
     @classmethod
@@ -87,6 +99,14 @@ class Settings(BaseSettings):
         """Ensure Redis URL is valid."""
         if not v.startswith('redis://'):
             raise ValueError(f"Invalid Redis URL format (must start with redis://)")
+        return v
+
+    @field_validator('CORS_ORIGINS', mode='before')
+    @classmethod
+    def parse_cors_origins(cls, v):
+        """Parse comma-separated CORS origins into list."""
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(',') if origin.strip()]
         return v
 
 

@@ -29,10 +29,10 @@ app.state.limiter = limiter
 app.state.rate_limiter_storage = rate_limiter_storage
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Add CORS middleware
+# Add CORS middleware with configurable origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000","http://localhost:8001"],
+    allow_origins=settings.CORS_ORIGINS, 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,9 +41,8 @@ app.add_middleware(
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     origin = request.headers.get("origin", "")
-    allowed = ["http://localhost:5173", "http://localhost:3000", "http://localhost:8001"]
     headers = {}
-    if origin in allowed:
+    if origin in settings.CORS_ORIGINS:  
         headers["Access-Control-Allow-Origin"] = origin
         headers["Access-Control-Allow-Credentials"] = "true"
     
@@ -54,10 +53,10 @@ async def global_exception_handler(request: Request, exc: Exception):
             headers=headers,
         )
     return JSONResponse(
-            status_code=500,
-            content={"detail": "Some Error , Retry"},
-            headers=headers,
-        )
+        status_code=500,
+        content={"detail": "Some Error, Retry"},
+        headers=headers,
+    )
     
 
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
