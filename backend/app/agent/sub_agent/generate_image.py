@@ -60,14 +60,14 @@ def generate_and_place_images(state: AgentState) -> dict:
     file_path.write_text(md, encoding="utf-8")
     
     pdf_path = convert_to_pdf(str(file_path))
-    
-    
-    state["pdf_path"] = pdf_path    
-    state["final_content"] = md
-    state["file_name"] = file_path.name
-    state["file_path"] = str(file_path)
 
     if thread_id:
         update_graph_progress(thread_id, "completed", "Blog generation complete!")
 
-    return state
+
+    return {
+        "pdf_path": pdf_path,
+        "final_content": md,
+        "file_name": file_path.name,
+        "file_path": str(file_path)
+    }
