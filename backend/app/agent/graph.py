@@ -58,7 +58,7 @@ def fanout(state:AgentState):
     ]
 
 
-def route_next(state: AgentState) -> str:
+def route_next(state: AgentState) -> str: 
     return "research" if state["needs_research"] else "orchestrator"
 
 

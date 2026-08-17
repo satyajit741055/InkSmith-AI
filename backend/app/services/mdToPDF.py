@@ -43,8 +43,15 @@ def convert_to_pdf(path: str, target_width_px: int = 450, max_width_px: int = 48
 
     def replacer(match):
         alt, rel_path = match.group(1), match.group(2)
-        clean_rel = rel_path.lstrip("./").replace("../", "")
-        img_path = (path.parent.parent / clean_rel).resolve()
+        # Handle relative paths: ./images/file.png or ../images/file.png
+        # Blog is at blogs/my_blog.md, images are at blogs/images/file.png
+        if rel_path.startswith("./"):
+            img_path = (path.parent / rel_path.lstrip("./")).resolve()
+        elif rel_path.startswith("../"):
+            img_path = (path.parent / rel_path).resolve()
+        else:
+            img_path = (path.parent / rel_path).resolve()
+        
         if not img_path.exists():
             # print(f"WARNING: missing {img_path}")
             return match.group(0)

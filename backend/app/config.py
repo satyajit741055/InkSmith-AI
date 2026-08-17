@@ -37,6 +37,7 @@ class Settings(BaseSettings):
 
     # Output Directory 
     OUTPUT_DIR: str = "blogs"
+    IMAGE_OUT_DIR: str = "blogs/images"  # Images stored inside blogs directory for shared volume
 
     # Tavily 
     TAVILY_API_KEY : str 

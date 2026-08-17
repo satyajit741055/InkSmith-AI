@@ -223,9 +223,13 @@ PROJECT_SPEC.md
 # output
 learning.md
 test.md
-improvement.md
+
 
 blogs/
 output/
 backend/images2/
 backend/test.ipynb
+
+IMAGE_PATH_FIX.md
+improvement.md
+peding.md

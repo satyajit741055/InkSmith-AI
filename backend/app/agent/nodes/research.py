@@ -14,7 +14,7 @@ def research(state: AgentState) -> dict:
         update_graph_progress(thread_id, "researching", "Searching the web for sources...")
 
     queries = (state.get("queries") or [])[:10]
-    raw: list[dict] = []
+    raw: list[dict] = [] 
     for q in queries:
         raw.extend(_tavily_search(q, max_results=6))
 

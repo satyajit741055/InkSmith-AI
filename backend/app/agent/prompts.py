@@ -1,6 +1,13 @@
 ORCHESTRATOR_PROMPT = """You are a senior technical writer and developer advocate.
 Your job is to produce a highly actionable outline for a technical blog post.
-
+ 
+RESEARCH GUIDANCE:
+If research evidence is provided below the user prompt, use it to:
+- Tailor sections to available sources
+- Ensure citations are feasible (mark requires_citations=true for sections citing sources)
+- Prioritize topics that have good research backing
+- If no evidence is provided, create a closed_book outline based on general knowledge.
+ 
 SCHEMA REQUIREMENTS (MUST FOLLOW EXACTLY):
 The Plan object MUST include these exact fields:
 - blog_title (string): Title of the blog post - USE THIS FIELD NAME, NOT 'name'
