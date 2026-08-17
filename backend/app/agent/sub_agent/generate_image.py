@@ -1,4 +1,4 @@
-from app.agent.state import AgentState
+from app.agent.state import AgentState, ImageSpec
 from pathlib import Path,PurePosixPath
 from app.services.generate_images import _generate_hf_image_bytes,_generate_openai_image_bytes
 from app.config import settings
@@ -25,28 +25,28 @@ def generate_and_place_images(state: AgentState) -> dict:
         images_dir.mkdir(parents=True, exist_ok=True)
 
         for spec in image_specs:
-            placeholder = spec["placeholder"]
-            filename = PurePosixPath(spec["filename"]).name
+            placeholder = spec.placeholder
+            filename = PurePosixPath(spec.filename).name
             out_path = images_dir / filename
 
             # generate only if needed
             if not out_path.exists():
                 try:
-                    img_bytes = _generate_hf_image_bytes(prompt=spec["prompt"],quality=spec["quality"],size=spec["size"])
+                    img_bytes = _generate_hf_image_bytes(prompt=spec.prompt, quality=spec.quality, size=spec.size)
                     out_path.write_bytes(img_bytes)
                 except Exception as e:
                     # graceful fallback: keep doc usable
                     prompt_block = (
-                        f"> **[IMAGE GENERATION FAILED]** {spec.get('caption','')}\n>\n"
-                        f"> **Alt:** {spec.get('alt','')}\n>\n"
-                        f"> **Prompt:** {spec.get('prompt','')}\n>\n"
+                        f"> **[IMAGE GENERATION FAILED]** {spec.caption}\n>\n"
+                        f"> **Alt:** {spec.alt}\n>\n"
+                        f"> **Prompt:** {spec.prompt}\n>\n"
                         f"> **Error:** {e}\n"
                     )
                     md = md.replace(placeholder, prompt_block)
                     continue
 
             # Use relative path from blog file to image (both in blogs/ directory)
-            img_md = f"![{spec['alt']}](./images/{filename})\n*{spec['caption']}*"
+            img_md = f"![{spec.alt}](./images/{filename})\n*{spec.caption}*"
             md = md.replace(placeholder, img_md)
 
     safe_title = re.sub(r'[<>:"/\\|?*]', '', state["topic"])

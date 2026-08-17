@@ -88,4 +88,4 @@ class AgentState(TypedDict, total=False):
 
     merged_md: str
     md_with_placeholders: str
-    image_specs: list[dict]
+    image_specs: list[ImageSpec]

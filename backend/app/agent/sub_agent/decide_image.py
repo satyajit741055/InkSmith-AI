@@ -63,7 +63,7 @@ def decide_images(state: AgentState) -> dict:
     image_plan = planner.invoke(
         [
             SystemMessage(content=DECIDE_IMAGES_SYSTEM),
-            HumanMessage(
+            HumanMessage( 
                 content=(
                     f"Blog kind: {plan.blog_kind}\n"
                     f"Topic: {state['topic']}\n\n"
@@ -78,5 +78,5 @@ def decide_images(state: AgentState) -> dict:
 
     return {
         "md_with_placeholders": md_with_placeholders,
-        "image_specs": [img.model_dump() for img in image_plan.images],
+        "image_specs": image_plan.images,  # Store ImageSpec objects directly
     }
