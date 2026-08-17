@@ -6,6 +6,34 @@ from app.services.storage import storage
 from sqlalchemy import update
 
 
+def validate_checkpoint(snapshot)->bool:
+    """
+    Validate if the checkpoint is valid for retry
+    """
+    if not snapshot or not snapshot.values:
+        return False
+
+    values = snapshot.values
+
+    required_fields = {
+        'user_prompt',  
+        'thread_id',    
+        'topic',        
+        'plan',     
+    }
+
+    if not all(field in values for field in ['user_prompt', 'thread_id']):
+        return False
+
+    if values.get('user_prompt') is None or values.get('thread_id') is None:
+        return False
+
+    if 'plan' in values and values['plan'] is None:
+        return False
+
+    return True
+
+
 
 def run_blog_generation(thread_id: str,
                         user_prompt: str | None = None, 
@@ -16,8 +44,12 @@ def run_blog_generation(thread_id: str,
 
     if is_retry:
         snapshot = _agent.get_state(config)
-        if snapshot and snapshot.values:
-            result = _agent.invoke(None, config)
+        if validate_checkpoint(snapshot):
+            try:
+                result = _agent.invoke(None, config)
+            except Exception as e:
+                print(f"Resume from checkpoint failed for {thread_id}: {e}, restarting from beginning")
+                result = _agent.invoke({"user_prompt": user_prompt, "thread_id": thread_id}, config)
         else:
             result = _agent.invoke({"user_prompt": user_prompt, "thread_id": thread_id}, config)
     else:
