@@ -6,9 +6,8 @@ from app.agent.prompts import RESEARCH_SYSTEM
 from app.services.search_tool import _tavily_search
 from app.services.state_service import update_graph_progress
 
-llm = get_llm()
-
 def research(state: AgentState) -> dict:
+    llm = get_llm()
     thread_id = state.get('thread_id')
     if thread_id:
         update_graph_progress(thread_id, "researching", "Searching the web for sources...")

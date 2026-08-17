@@ -6,16 +6,19 @@ from app.models import BlogGeneration, User
 from app.tasks.blog_tasks import generate_blog_task
 from app.config import settings
 from app.services.storage import storage
-from fastapi import APIRouter,Depends
+from app.services.websocket_manager import manager
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from app.schemas import UserPrompt, BlogGenerationId, BlogGenerationResponse
 from app.agent.graph import graph
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from fastapi import HTTPException,Request
+from fastapi import HTTPException, Request
 from pathlib import Path
-from fastapi.responses import FileResponse,RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from app.limiter import limiter
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.post(
@@ -124,6 +127,49 @@ async def retry_blog(
 
     generate_blog_task.delay(blog_id, is_retry=True)
     return {"thread_id": blog_id, "status": "retrying"}
+
+
+@router.websocket("/ws/{blog_id}")
+async def websocket_endpoint(websocket: WebSocket, blog_id: str):
+    """
+    WebSocket endpoint for real-time blog status updates.
+    
+    Clients connect to /api/v1/blog/ws/{blog_id} to receive real-time updates
+    as the blog is being generated.
+    """
+    try:
+        # ✅ Accept WebSocket connection
+        await manager.connect(blog_id, websocket)
+        
+        # ✅ Send initial status
+        from app.database import sync_session_local
+        with sync_session_local() as db:
+            result = db.query(BlogGeneration).filter(BlogGeneration.thread_id == blog_id).first()
+            if result:
+                initial_status = {
+                    "thread_id": blog_id,
+                    "status": result.status,
+                    "current_step": result.current_step or "",
+                    "error_message": result.error_message or "",
+                }
+                await manager.send_personal(websocket, initial_status)
+        
+        # ✅ Keep connection alive
+        while True:
+            # Wait for any incoming message (optional, for keep-alive)
+            data = await websocket.receive_text()
+            # Optional: handle incoming commands
+            logger.debug(f"Received message from client: {data}")
+    
+    except WebSocketDisconnect:
+        # ✅ Clean up on disconnect
+        await manager.disconnect(blog_id, websocket)
+        logger.info(f"Client disconnected from blog {blog_id}")
+    
+    except Exception as e:
+        # ✅ Handle errors gracefully
+        logger.error(f"WebSocket error for blog {blog_id}: {e}")
+        await manager.disconnect(blog_id, websocket)
 
 
 

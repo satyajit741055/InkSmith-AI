@@ -5,8 +5,9 @@ from app.agent.prompts import ROUTER_SYSTEM
 from app.services.state_service import update_graph_progress
 
 
-llm = get_llm()
 def router(state: AgentState) -> dict:
+
+    llm = get_llm()
     thread_id = state.get('thread_id')
     if thread_id:
         update_graph_progress(thread_id, "routing", "Analyzing prompt & deciding approach...")

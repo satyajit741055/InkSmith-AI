@@ -6,9 +6,9 @@ from langchain_core.runnables import RunnableConfig
 
 from app.services.state_service import update_graph_progress
 
-llm = get_llm()
-
 def orchestrator(state: AgentState) -> AgentState:
+
+    llm = get_llm()
     user_prompt = state['user_prompt']
     thread_id = state.get('thread_id')
     evidences = state.get('evidence', [])

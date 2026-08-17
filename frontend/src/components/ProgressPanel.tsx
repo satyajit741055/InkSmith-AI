@@ -28,28 +28,87 @@ const STAGES = [
 export const ProgressPanel: React.FC<ProgressPanelProps> = ({ threadId, onComplete }) => {
   const [status, setStatus] = useState<BlogStatusResponse | null>(null);
   const [error, setError] = useState('');
-  const [isPolling, setIsPolling] = useState(true);
+  const [wsConnected, setWsConnected] = useState(false);
 
   useEffect(() => {
-    if (!isPolling) return;
-    const pollStatus = async () => {
+    // ✅ Connect to WebSocket for real-time updates
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${window.location.host}${import.meta.env.VITE_API_BASE_URL.replace(/^https?:\/\/[^/]+/, '')}/ws/${threadId}`;
+    
+    const ws = new WebSocket(wsUrl);
+    
+    ws.onopen = () => {
+      console.log('✅ WebSocket connected for real-time updates');
+      setWsConnected(true);
+      setError('');
+    };
+    
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as BlogStatusResponse;
+        setStatus(data);
+        setError('');
+        
+        // ✅ Stop when completed or failed
+        if (data.status === 'completed' || data.status === 'failed') {
+          onComplete(data);
+          ws.close();
+        }
+      } catch (err) {
+        console.error('Error parsing WebSocket message:', err);
+      }
+    };
+    
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setError('Real-time connection error, falling back to polling');
+      setWsConnected(false);
+      
+      // ✅ Fallback to polling if WebSocket fails
+      _startPolling();
+    };
+    
+    ws.onclose = () => {
+      console.log('WebSocket disconnected');
+      setWsConnected(false);
+    };
+    
+    // ✅ Fallback polling function
+    const _startPolling = async () => {
       try {
         const response = await blogAPI.getBlogStatus(threadId);
         setStatus(response.data);
         setError('');
+        
         if (response.data.status === 'completed' || response.data.status === 'failed') {
-          setIsPolling(false);
           onComplete(response.data);
+          return;
         }
+        
+        // Poll every 3 seconds as fallback
+        setTimeout(_startPolling, 3000);
       } catch (err) {
+        console.error('Polling error:', err);
         setError('Failed to fetch status');
-        console.error(err);
+        setTimeout(_startPolling, 5000);
       }
     };
-    pollStatus();
-    const interval = setInterval(pollStatus, 2000);
-    return () => clearInterval(interval);
-  }, [threadId, isPolling, onComplete]);
+    
+    // Start polling as fallback if WebSocket doesn't connect within 5 seconds
+    const fallbackTimer = setTimeout(() => {
+      if (!wsConnected) {
+        console.warn('WebSocket not connected, starting polling fallback');
+        _startPolling();
+      }
+    }, 5000);
+    
+    return () => {
+      clearTimeout(fallbackTimer);
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    };
+  }, [threadId, onComplete, wsConnected]);
 
   const stageKeys = STAGES.map((s) => s.key);
   const currentStageIndex = status ? stageKeys.indexOf(status.status as string) : -1;
@@ -121,21 +180,37 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({ threadId, onComple
         }}
       >
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <div
-            style={{
-              width: 30, height: 30, borderRadius: 8,
-              background: 'linear-gradient(135deg, #7c3aed, #3b82f6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 4px 15px rgba(124,58,237,0.3)',
-              flexShrink: 0,
-            }}
-          >
-            <Sparkles style={{ width: 14, height: 14, color: 'white' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 30, height: 30, borderRadius: 8,
+                background: 'linear-gradient(135deg, #7c3aed, #3b82f6)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 4px 15px rgba(124,58,237,0.3)',
+                flexShrink: 0,
+              }}
+            >
+              <Sparkles style={{ width: 14, height: 14, color: 'white' }} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'white', margin: 0 }}>Progress</h3>
+              <p style={{ fontSize: 11, color: '#64748b', margin: 0 }}>Real-time tracking</p>
+            </div>
           </div>
-          <div>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'white', margin: 0 }}>Progress</h3>
-            <p style={{ fontSize: 11, color: '#64748b', margin: 0 }}>Real-time tracking</p>
+          
+          {/* ✅ WebSocket connection indicator */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div
+              style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: wsConnected ? '#10b981' : '#ef4444',
+                boxShadow: wsConnected ? '0 0 8px rgba(16,185,129,0.6)' : '0 0 8px rgba(239,68,68,0.6)',
+              }}
+            />
+            <span style={{ fontSize: 10, color: wsConnected ? '#10b981' : '#ef4444', fontWeight: 500 }}>
+              {wsConnected ? 'Live' : 'Polling'}
+            </span>
           </div>
         </div>
 

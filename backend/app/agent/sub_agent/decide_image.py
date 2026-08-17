@@ -5,8 +5,6 @@ from langchain_core.messages import SystemMessage,HumanMessage
 from app.services.state_service import update_graph_progress
 import difflib
 
-llm = get_llm()
-
 _FUZZY_THRESHOLD = 0.75
 
 def _fuzzy_find(md: str, anchor: str) -> int:
@@ -51,6 +49,9 @@ def insert_placeholders(merged_md: str, images: list[ImageSpec]) -> str:
 
 
 def decide_images(state: AgentState) -> dict:
+
+    llm = get_llm()
+    
     thread_id = state.get('thread_id')
     if thread_id:
         update_graph_progress(thread_id, "image_planning", "Planning image placements...")

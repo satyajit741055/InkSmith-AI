@@ -3,9 +3,10 @@ from app.services.llm import get_llm
 from app.agent.prompts import WRITER_PROMPT
 from langchain_core.messages import SystemMessage, HumanMessage
 from app.services.state_service import update_graph_progress
-llm = get_llm()
 
 def writer(payload:dict)->dict:
+
+    llm = get_llm()
     task = Task(**payload["task"])
     plan = Plan(**payload["plan"])
     thread_id = payload.get("thread_id")
