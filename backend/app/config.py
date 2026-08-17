@@ -1,6 +1,7 @@
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
+import os
 
 class Settings(BaseSettings):
     """
@@ -60,6 +61,24 @@ class Settings(BaseSettings):
         description="Backend API base URL (used by frontend)"
     )
 
+    # LangSmith Tracing Configuration
+    LANGSMITH_TRACING: str = Field(
+        default="false",
+        description="Enable LangSmith tracing (true/false). Only activates if LANGSMITH_API_KEY is set."
+    )
+    LANGSMITH_API_KEY: str | None = Field(
+        default=None,
+        description="LangSmith API key for tracing. Leave empty to disable tracing."
+    )
+    LANGSMITH_PROJECT: str = Field(
+        default="ink-smith",
+        description="LangSmith project name for organizing traces"
+    )
+    LANGSMITH_ENDPOINT: str = Field(
+        default="https://api.smith.langchain.com",
+        description="LangSmith API endpoint"
+    )
+
     # Validators
     @field_validator('OPENAI_API_KEY', 'GROQ_API_KEY', 'HF_API_KEY', 'DEEPSEEK_API_KEY', 'TAVILY_API_KEY')
     @classmethod
@@ -111,3 +130,43 @@ class Settings(BaseSettings):
 
 
 settings = Settings()  # Raises ValidationError if any validation fails
+
+
+def apply_langchain_env():
+    """
+    Configure LangSmith tracing for automatic instrumentation of LangGraph.
+    
+    Tracing is only activated when BOTH conditions are met:
+    1. LANGSMITH_TRACING is "true" (case-insensitive)
+    2. LANGSMITH_API_KEY is set and not empty
+
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Check if tracing is enabled
+    tracing_enabled = settings.LANGSMITH_TRACING.lower() == "true"
+    api_key_set = bool(settings.LANGSMITH_API_KEY and settings.LANGSMITH_API_KEY.strip())
+    
+    if tracing_enabled and api_key_set:
+  
+        os.environ["LANGCHAIN_TRACING_V2"] = "true"
+        os.environ["LANGCHAIN_API_KEY"] = settings.LANGSMITH_API_KEY
+        os.environ["LANGCHAIN_PROJECT"] = settings.LANGSMITH_PROJECT
+        os.environ["LANGCHAIN_ENDPOINT"] = settings.LANGSMITH_ENDPOINT
+        
+        logger.info(f"✅ LangSmith tracing enabled (project: {settings.LANGSMITH_PROJECT})")
+    
+    elif tracing_enabled and not api_key_set:
+        logger.warning(
+            "⚠️ LangSmith tracing requested but LANGSMITH_API_KEY not set. "
+            "Tracing disabled to avoid 401 errors on every LLM call. "
+            "Set LANGSMITH_API_KEY to enable tracing."
+        )
+    
+    else:
+        logger.debug("ℹ️ LangSmith tracing disabled (LANGSMITH_TRACING=false)")
+
+
+# Apply LangSmith configuration at startup
+apply_langchain_env()

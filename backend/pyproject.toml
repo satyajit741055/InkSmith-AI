@@ -33,6 +33,8 @@ dependencies = [
     "psycopg[binary]>=3.3.4",
     "slowapi>=0.1.10",
     "langchain-deepseek>=1.1.0",
+    "langsmith>=0.10.15",
+    "openai>=2.52.0",
 ]
 
 [dependency-groups]
