@@ -29,4 +29,8 @@ export const blogAPI = {
 
   downloadPdf: (threadId: string) =>
     client.get(`/blog/${threadId}/pdf`, { responseType: 'blob' }),
+
+  // ✅ Retry a failed blog generation
+  retryBlog: (threadId: string) =>
+    client.post(`/blog/${threadId}/retry`, {}),
 };

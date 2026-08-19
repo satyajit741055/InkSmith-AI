@@ -42,6 +42,25 @@ export const NewBlogPage: React.FC = () => {
     if (pdfBlobUrl) { URL.revokeObjectURL(pdfBlobUrl); setPdfBlobUrl(null); }
   };
 
+  // ✅ Retry a failed blog generation
+  const handleRetry = async () => {
+    if (!finalStatus) return;
+    
+    try {
+      // Call retry endpoint
+      await blogAPI.retryBlog(finalStatus.thread_id);
+      
+      // Clear error state but keep the threadId
+      setFinalStatus(null);
+      setThreadId(finalStatus.thread_id);
+      
+      // Progress panel will reconnect via WebSocket automatically
+    } catch (err) {
+      console.error('Retry failed:', err);
+      // Show error to user (optional)
+    }
+  };
+
   const cardStyle: React.CSSProperties = {
     background: '#161625',
     border: '1px solid #2a2a40',
@@ -273,7 +292,7 @@ export const NewBlogPage: React.FC = () => {
                         </p>
 
                         <button
-                          onClick={handleReset}
+                          onClick={handleRetry}
                           className="btn-glow inline-flex items-center justify-center gap-2 text-white px-8 py-4 rounded-xl font-semibold"
                         >
                           <RotateCcw size={18} />

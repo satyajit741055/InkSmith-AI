@@ -2,6 +2,9 @@ from pathlib import Path
 from typing import Protocol
 from app.config import settings
 
+import boto3
+from botocore.exceptions import ClientError
+
 
 class BlogStorage(Protocol):
     def save(self, local_file_path: str) -> str: ...
@@ -44,22 +47,51 @@ class LocalStorage:
 class S3Storage:
     def __init__(self, bucket_name: str):
         self.bucket_name = bucket_name
+        self.client = boto3.client(
+            "s3",
+            aws_access_key_id=settings.S3_ACCESS_KEY_ID.get_secret_value(),
+            aws_secret_access_key=settings.S3_SECRET_ACCESS_KEY.get_secret_value(),
+            region_name=settings.S3_REGION,
+        )
+
+        self._cache_dir = Path(__file__).resolve().parents[2] / "blogs" / "_s3_cache"
+        self._cache_dir.mkdir(parents=True, exist_ok=True)
 
     def save(self, local_file_path: str) -> str:
-        # TODO: Implement S3 upload
-        pass
+        src = Path(local_file_path)
+        key = src.name
+        
+        self.client.upload_file(str(src), self.bucket_name, key)
+        return key
 
     def resolve(self, key: str) -> Path:
-        # TODO: Implement S3 download
-        pass
+        dest = self._cache_dir / key
+        if not dest.exists():
+            try:
+                self.client.download_file(self.bucket_name, key, str(dest))
+            except Exception as e:
+                raise FileNotFoundError(f"File not found for key: {key}") from e
+        return dest
 
     def get_url(self, key: str) -> str | None:
-        # TODO: Implement S3 URL generation
-        pass
+        try:
+            return self.client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": self.bucket_name, "Key": key},
+                ExpiresIn=3600,  # URL expires in 1 hour
+            )
+        except ClientError:
+            return None
 
     def exists(self, key: str) -> bool:
-        # TODO: Implement S3 exists check
-        pass
+        try:
+            self.client.head_object(Bucket=self.bucket_name, Key=key)
+            return True
+        except ClientError as e:
+            if e.response["Error"]["Code"] in ("404", "NoSuchKey"):
+                return False
+            raise
+            
 
 def _build_storage() -> BlogStorage:
     backend = getattr(settings, "BACKEND", "local")
@@ -70,6 +102,8 @@ def _build_storage() -> BlogStorage:
             output_dir = Path(__file__).resolve().parents[2] / output_dir
         return LocalStorage(str(output_dir))
     elif backend == "s3":
+        if not settings.S3_BUCKET_NAME:
+            raise ValueError("S3_BUCKET_NAME must be set when BACKEND=s3")
         return S3Storage(settings.S3_BUCKET_NAME)
     
     raise ValueError(f"Unknown BACKEND: {backend}")

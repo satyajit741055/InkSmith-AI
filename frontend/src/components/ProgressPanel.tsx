@@ -33,8 +33,11 @@ export const ProgressPanel: React.FC<ProgressPanelProps> = ({ threadId, onComple
   useEffect(() => {
     // ✅ Connect to WebSocket for real-time updates
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//${window.location.host}${import.meta.env.VITE_API_BASE_URL.replace(/^https?:\/\/[^/]+/, '')}/ws/${threadId}`;
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api/v1';
+    const apiPath = apiBaseUrl.replace(/^https?:\/\/[^/]+/, '');
+    const wsUrl = `${wsProtocol}//${window.location.host}${apiPath}/ws/${threadId}`;
     
+    console.log('WebSocket URL:', wsUrl);
     const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {

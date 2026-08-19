@@ -98,17 +98,15 @@ async def view_file(
         raise HTTPException(status_code=404, detail="Not found")
     if not entry.pdf_path:
         raise HTTPException(status_code=404, detail="PDF not found")
-    if settings.BACKEND == "local":
-        key = Path(entry.pdf_path).name
-        if storage.exists(key):
-            return FileResponse(storage.resolve(key))
-        raw = Path(entry.pdf_path)
-        if raw.exists():
-            return FileResponse(raw)
-        raise HTTPException(status_code=404, detail="PDF file missing on disk")
-    else:
-        key = Path(entry.pdf_path).name
-        return RedirectResponse(storage.get_url(key)) # signed S3 URL
+    
+    key = Path(entry.pdf_path).name
+    
+    # For both local and S3: resolve the file (downloads from S3 to cache if needed)
+    try:
+        file_path = storage.resolve(key)
+        return FileResponse(file_path, media_type="application/pdf", filename=key)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="PDF file not found")
 
 
 

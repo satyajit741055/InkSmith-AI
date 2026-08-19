@@ -35,6 +35,7 @@ dependencies = [
     "langchain-deepseek>=1.1.0",
     "langsmith>=0.10.15",
     "openai>=2.52.0",
+    "boto3>=1.43.74",
 ]
 
 [dependency-groups]

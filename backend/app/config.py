@@ -1,4 +1,4 @@
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 import os
@@ -49,11 +49,19 @@ class Settings(BaseSettings):
     # Environment
     ENVIRONMENT: str = "local"
 
+
+    # S3 Configuration
+    S3_BUCKET_NAME: str | None = None
+    S3_REGION: str = "ap-south-1"
+    S3_ACCESS_KEY_ID: SecretStr | None = None
+    S3_SECRET_ACCESS_KEY: SecretStr | None = None
+    S3_ENDPOINT_URL: str | None = None
+
     # CORS Configuration
     CORS_ORIGINS: str = Field(
-        default="http://localhost:5173,http://localhost:3000,http://localhost:8001",
-        description="Comma-separated list of allowed CORS origins"
-    )
+    default="http://localhost:5173,http://localhost:3000,http://localhost:8001",
+    description="Comma-separated list of allowed CORS origins"
+)
 
     # API Configuration (for frontend)
     API_BASE_URL: str = Field(
@@ -118,14 +126,6 @@ class Settings(BaseSettings):
         """Ensure Redis URL is valid."""
         if not v.startswith('redis://'):
             raise ValueError(f"Invalid Redis URL format (must start with redis://)")
-        return v
-
-    @field_validator('CORS_ORIGINS', mode='before')
-    @classmethod
-    def parse_cors_origins(cls, v):
-        """Parse comma-separated CORS origins into list."""
-        if isinstance(v, str):
-            return [origin.strip() for origin in v.split(',') if origin.strip()]
         return v
 
 
